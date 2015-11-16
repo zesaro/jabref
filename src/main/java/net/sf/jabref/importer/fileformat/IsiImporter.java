@@ -306,8 +306,7 @@ public class IsiImporter extends ImportFormat {
                     Type = value;
                     if (Type.equals("Review")) {
                         Type = "article"; // set "Review" in Note/Comment?
-                    } else if (Type.startsWith("Article") || Type.startsWith("Journal")
-                            || PT.equals("article")) {
+                    } else if (Type.startsWith("Article") || Type.startsWith("Journal") || PT.equals("article")) {
                         Type = "article";
                     } else {
                         Type = "misc";

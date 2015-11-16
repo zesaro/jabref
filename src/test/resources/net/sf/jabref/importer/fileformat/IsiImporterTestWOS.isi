@@ -132,4 +132,65 @@ GA 024NR
 UT ISI:000236202800037
 ER
 
+PT J
+AU Guarino, A
+   Jazbinsek, M
+   Herzog, C
+   Degl'Innocenti, R
+   Poberaj, G
+   Gunter, P
+TI Optical waveguides in Sn2P2S6 by low fluence MeV He+ ion implantation
+SO OPTICS EXPRESS
+LA English
+DT Review
+ID REFRACTIVE-INDEX PROFILES; INFRARED WAVELENGTHS; PHASE-CONJUGATION;
+   KNBO3; MODES
+AB Planar waveguides in nonlinear optical crystals of Sn2P2S6 have been
+   produced by He+ ion implantation. The effective indices of the
+   waveguide have been determined and refractive index profiles have been
+   evaluated for the indices along all three principal axes of the optical
+   indicatrix. The depth of the induced optical barrier is. Delta n(1) = -
+   0.07, Delta n(2) = - 0.07 and Delta n(3) = - 0.09 lambda = 0.633 mu m
+   for a fluence Phi = 0.5 x 10(15) ions/cm(2). Propagation losses for
+   hybrid-n(1) modes are alpha similar or equal to 10dB/cm. (c) 2006
+   Optical Society of America.
+C1 ETH, Inst Quantum Elect, Nonlinear Opt Lab, CH-8093 Zurich, Switzerland.
+RP Guarino, A, ETH, Inst Quantum Elect, Nonlinear Opt Lab, CH-8093 Zurich,
+   Switzerland.
+EM guarino@phys.ethz.ch
+CR BACH T, 2005, OPT EXPRESS, V13, P9890
+   CHANDLER PJ, 1986, OPT ACTA, V33, P127
+   CHIANG KS, 1985, J LIGHTWAVE TECHNOL, V3, P385
+   DEROSSI A, 2005, J APPL PHYS, V97
+   FLUCK D, 1992, FERROELECTRICS, V128, P79
+   FLUCK D, 1993, J APPL PHYS, V74, P6023
+   GUARINO A, 2005, OPT LETT, V18, P2412
+   HAERTLE D, 2005, OPT EXPRESS, V13, P2047
+   HAERTLE D, 2005, OPT EXPRESS, V13, P3765
+   JAZBINSEK M, 2005, J OPT SOC AM B, V22, P2459
+   MALDONADO TA, 1996, J LIGHTWAVE TECHNOL, V14, P486
+   MARCUSE D, 1978, IEEE J QUANTUM ELECT, V14, P736
+   TOWNSEND PD, 1994, OPTICAL EFFECTS ION
+   YARIV A, 1984, OPTICAL WAVES CRYSTA
+   ZHA M, 1993, OPT LETT, V18, P577
+NR 15
+TC 0
+PU OPTICAL SOC AMER
+PI WASHINGTON
+PA 2010 MASSACHUSETTS AVE NW, WASHINGTON, DC 20036 USA
+SN 1094-4087
+J9 OPT EXPRESS
+JI Opt. Express
+PD MAR 20
+PY 2006
+VL 14
+IS 6
+BP 2344
+EP 2358
+PG 15
+SC Optics
+GA 024NR
+UT ISI:000236202800037
+ER
+
 EF
