@@ -52,7 +52,9 @@ public class DoiFetcher implements IdBasedFetcher {
                 String bibtexString = download.downloadToString(StandardCharsets.UTF_8);
 
                 // BibTeX entry
-                return BibtexParser.singleFromString(cleanupEncoding(bibtexString), preferences);
+                Optional<BibEntry> result = BibtexParser.singleFromString(cleanupEncoding(bibtexString), preferences);
+                result.ifPresent(this::normaliseCiteKey);
+                return result;
             } else {
                 throw new FetcherException(Localization.lang("Invalid_DOI:_'%0'.", identifier));
             }

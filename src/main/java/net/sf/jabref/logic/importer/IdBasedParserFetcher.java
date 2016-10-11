@@ -51,7 +51,7 @@ public interface IdBasedParserFetcher extends IdBasedFetcher {
      * @param entry the entry to be cleaned-up
      */
     default void doPostCleanup(BibEntry entry) {
-        // Do nothing by default
+        normaliseCiteKey(entry);
     }
 
     @Override

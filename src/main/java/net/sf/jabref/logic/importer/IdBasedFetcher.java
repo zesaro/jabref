@@ -9,6 +9,10 @@ import net.sf.jabref.model.entry.BibEntry;
  */
 public interface IdBasedFetcher extends WebFetcher {
 
+    default void normaliseCiteKey(BibEntry entry){
+
+    }
+
     /**
      * Looks for bibliographic information associated to the given identifier.
      *
