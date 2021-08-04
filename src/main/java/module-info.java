@@ -63,6 +63,12 @@ open module org.jabref {
     // Libre Office
     requires org.libreoffice.uno;
 
+    // BibSonomy
+    requires bibsonomy.common;
+    requires bibsonomy.model;
+    requires bibsonomy.rest.client;
+    requires bibsonomy.rest.common;
+
     // Other modules
     requires com.google.common;
     requires jakarta.inject;

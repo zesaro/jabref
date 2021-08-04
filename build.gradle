@@ -80,6 +80,7 @@ sourceSets {
 repositories {
     mavenLocal()
     mavenCentral()
+    maven { url 'https://dev.bibsonomy.org/maven2/' }
     maven { url 'https://oss.sonatype.org/content/groups/public' }
     maven { url 'https://jitpack.io' }
 }
@@ -126,6 +127,11 @@ dependencies {
     implementation 'com.h2database:h2-mvstore:2.1.214'
 
     implementation group: 'org.apache.tika', name: 'tika-core', version: '2.6.0'
+
+    // BibSonomy
+    implementation ('org.bibsonomy:bibsonomy-rest-client:3.9.2') {
+        exclude module: "jaxb-impl"
+    }
 
     // required for reading write-protected PDFs - see https://github.com/JabRef/jabref/pull/942#issuecomment-209252635
     implementation 'org.bouncycastle:bcprov-jdk18on:1.71.1'
