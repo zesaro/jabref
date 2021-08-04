@@ -46,6 +46,11 @@ public class SidePaneManager {
             show(SidePaneType.WEB_SEARCH);
         }
 
+        if(false){
+            //TODO
+            show(SidePaneType.BIBSONOMY);
+        }
+
         updateView();
     }
 

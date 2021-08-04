@@ -128,6 +128,9 @@ import org.slf4j.LoggerFactory;
  */
 public class JabRefPreferences implements PreferencesService {
 
+    // BibSonomy
+    public static final String BIBSONOMY_PROPERTIES = "bibsonomyProperties";
+
     // Push to application preferences
     public static final String PUSH_EMACS_PATH = "emacsPath";
     public static final String PUSH_EMACS_ADDITIONAL_PARAMETERS = "emacsParameters";

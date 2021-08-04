@@ -830,6 +830,7 @@ public class JabRefFrame extends BorderPane {
         SidePaneComponent webSearch = sidePaneManager.getComponent(SidePaneType.WEB_SEARCH);
         SidePaneComponent groups = sidePaneManager.getComponent(SidePaneType.GROUPS);
         SidePaneComponent openOffice = sidePaneManager.getComponent(SidePaneType.OPEN_OFFICE);
+        SidePaneComponent bibsonomy = sidePaneManager.getComponent(SidePaneType.BIBSONOMY);
 
         view.getItems().addAll(
                 factory.createCheckMenuItem(webSearch.getToggleAction(), webSearch.getToggleCommand(), sidePaneManager.isComponentVisible(SidePaneType.WEB_SEARCH)),
