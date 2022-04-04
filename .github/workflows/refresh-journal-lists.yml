@@ -20,7 +20,7 @@ jobs:
         with:
           java-version: 16
           distribution: 'adopt'
-      - uses: actions/cache@v1
+      - uses: actions/cache@v3.0.1
         name: Restore gradle wrapper
         with:
           path: ~/.gradle/wrapper
