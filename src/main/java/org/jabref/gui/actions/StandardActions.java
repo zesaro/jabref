@@ -7,8 +7,11 @@ import org.jabref.gui.icon.JabRefIcon;
 import org.jabref.gui.keyboard.KeyBinding;
 import org.jabref.logic.l10n.Localization;
 
+// ToDo: Localization and Icons for BibSonomy
 public enum StandardActions implements Action {
-
+    BIBSONOMY_SYNCHRONIZE(Localization.lang("Synchronize"), IconTheme.JabRefIcons.DEFAULT_GROUP_ICON),
+    BIBSONOMY_DOWNLOAD_DOCUMENT(Localization.lang("Download Documents"), IconTheme.JabRefIcons.DEFAULT_GROUP_ICON),
+    BIBSONOMY_TOGGLE_TAG_CLOUD("Toggle Tag Cloud"),
     COPY_MORE(Localization.lang("Copy") + "..."),
     COPY_TITLE(Localization.lang("Copy title"), KeyBinding.COPY_TITLE),
     COPY_KEY(Localization.lang("Copy citation key"), KeyBinding.COPY_CITATION_KEY),

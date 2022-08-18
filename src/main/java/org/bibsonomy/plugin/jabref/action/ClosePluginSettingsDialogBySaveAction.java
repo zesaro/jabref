@@ -1,28 +1,3 @@
-/**
- *  
- *  JabRef Bibsonomy Plug-in - Plugin for the reference management 
- * 		software JabRef (http://jabref.sourceforge.net/) 
- * 		to fetch, store and delete entries from BibSonomy.
- *   
- *  Copyright (C) 2008 - 2011 Knowledge & Data Engineering Group, 
- *                            University of Kassel, Germany
- *                            http://www.kde.cs.uni-kassel.de/
- *  
- *  This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public License
- *  as published by the Free Software Foundation; either version 2
- *  of the License, or (at your option) any later version.
- * 
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *  
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
-
 package org.bibsonomy.plugin.jabref.action;
 
 import java.awt.event.ActionEvent;
@@ -65,7 +40,7 @@ public class ClosePluginSettingsDialogBySaveAction extends AbstractAction {
 	private JComboBox<?> order;
 
 	public void actionPerformed(ActionEvent e) {
-	
+
 		PluginProperties.setApiUrl(apiUrl.getText());
 		PluginProperties.setUsername(username.getText());
 		PluginProperties.setApiKey(apiKey.getText());
@@ -79,7 +54,7 @@ public class ClosePluginSettingsDialogBySaveAction extends AbstractAction {
 		PluginProperties.setIgnoreMorePostsWarning(morePosts.isSelected());
 		PluginProperties.setExtraFields(extraFields.getText());
 		PluginProperties.setTagCloudOrder(((OrderComboBoxItem)order.getSelectedItem()).getKey());
-		
+
 		switch (((GroupingComboBoxItem)visibility.getSelectedItem()).getKey()) {
 		case USER:
 			PluginProperties.setDefaultVisisbility("private");
@@ -90,18 +65,18 @@ public class ClosePluginSettingsDialogBySaveAction extends AbstractAction {
 		default:
 			PluginProperties.setDefaultVisisbility("public");
 		}
-		
+
 		PluginProperties.save();
 		settingsDialog.setVisible(false);
 	}
 
-	public ClosePluginSettingsDialogBySaveAction(PluginSettingsDialog settingsDialog, JTextField apiUrl, JTextField username, JTextField apiKey, 
-												 JCheckBox saveApiKey, JSpinner numberOfPosts, 
-												 JSpinner tagCloudSize, JCheckBox ignoreNoTagsAssigned, 
-												 JCheckBox updateTags, JCheckBox uploadDocuments, 
-												 JCheckBox downloadDocuments, JComboBox<?> visibility, 
+	public ClosePluginSettingsDialogBySaveAction(PluginSettingsDialog settingsDialog, JTextField apiUrl, JTextField username, JTextField apiKey,
+												 JCheckBox saveApiKey, JSpinner numberOfPosts,
+												 JSpinner tagCloudSize, JCheckBox ignoreNoTagsAssigned,
+												 JCheckBox updateTags, JCheckBox uploadDocuments,
+												 JCheckBox downloadDocuments, JComboBox<?> visibility,
 												 JCheckBox morePosts, JTextField extraFields, JComboBox<?> order) {
-		
+
 		super("Save", new ImageIcon(ClosePluginSettingsDialogBySaveAction.class.getResource("/images/disk-black.png")));
 		this.apiUrl = apiUrl;
 		this.settingsDialog = settingsDialog;

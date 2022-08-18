@@ -1,28 +1,3 @@
-/**
- *  
- *  JabRef Bibsonomy Plug-in - Plugin for the reference management 
- * 		software JabRef (http://jabref.sourceforge.net/) 
- * 		to fetch, store and delete entries from BibSonomy.
- *   
- *  Copyright (C) 2008 - 2011 Knowledge & Data Engineering Group, 
- *                            University of Kassel, Germany
- *                            http://www.kde.cs.uni-kassel.de/
- *  
- *  This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public License
- *  as published by the Free Software Foundation; either version 2
- *  of the License, or (at your option) any later version.
- * 
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *  
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
-
 package org.bibsonomy.plugin.jabref.gui;
 
 import java.awt.GridBagLayout;
@@ -80,7 +55,7 @@ public class PluginSidePanel extends JPanel {
 
 	/**
 	 * This method initializes this
-	 * 
+	 *
 	 * @return void
 	 */
 	private void initialize() {
@@ -120,9 +95,9 @@ public class PluginSidePanel extends JPanel {
 	}
 
 	/**
-	 * This method initializes controlsPanel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes controlsPanel
+	 *
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getControlsPanel() {
 		if (controlsPanel == null) {
@@ -159,9 +134,9 @@ public class PluginSidePanel extends JPanel {
 	}
 
 	/**
-	 * This method initializes searchTextField	
-	 * 	
-	 * @return javax.swing.JTextField	
+	 * This method initializes searchTextField
+	 *
+	 * @return javax.swing.JTextField
 	 */
 	private JTextField getSearchTextField() {
 		if (searchTextField == null) {
@@ -171,33 +146,33 @@ public class PluginSidePanel extends JPanel {
 	}
 
 	/**
-	 * This method initializes searchTypeComboBox	
-	 * 	
-	 * @return javax.swing.JComboBox	
+	 * This method initializes searchTypeComboBox
+	 *
+	 * @return javax.swing.JComboBox
 	 */
 	private JComboBox<?> getSearchTypeComboBox() {
 		if (searchTypeComboBox == null) {
-			
+
 			SearchTypeComboBoxItem[] items = new SearchTypeComboBoxItem[] {
 					new SearchTypeComboBoxItem(SearchType.FULL_TEXT, "Full text"),
 					new SearchTypeComboBoxItem(SearchType.TAGS, "Tag")
 			};
 			searchTypeComboBox = new JComboBox<Object>(items);
-			
-			
+
+
 		}
 		return searchTypeComboBox;
 	}
 
 	/**
-	 * This method initializes searchButton	
-	 * 	
-	 * @return javax.swing.JButton	
+	 * This method initializes searchButton
+	 *
+	 * @return javax.swing.JButton
 	 */
 	private JButton getSearchButton() {
 		if (searchButton == null) {
 			searchButton = new JButton(
-					new SearchAction(jabRefFrame, getSearchTextField(), 
+					new SearchAction(jabRefFrame, getSearchTextField(),
 					getSearchTypeComboBox(),
 					getVisibilityComboBox())
 			);
@@ -206,9 +181,9 @@ public class PluginSidePanel extends JPanel {
 	}
 
 	/**
-	 * This method initializes tagsPanel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes tagsPanel
+	 *
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getTagsPanel() {
 		if (tagsPanel == null) {
@@ -242,9 +217,9 @@ public class PluginSidePanel extends JPanel {
 	}
 
 	/**
-	 * This method initializes tagsUpdateButton	
-	 * 	
-	 * @return javax.swing.JButton	
+	 * This method initializes tagsUpdateButton
+	 *
+	 * @return javax.swing.JButton
 	 */
 	private JButton getTagsUpdateButton() {
 		if (tagsUpdateButton == null) {
@@ -254,9 +229,9 @@ public class PluginSidePanel extends JPanel {
 	}
 
 	/**
-	 * This method initializes visibilityPanel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes visibilityPanel
+	 *
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getVisibilityPanel() {
 		if (visibilityPanel == null) {
@@ -276,9 +251,9 @@ public class PluginSidePanel extends JPanel {
 	}
 
 	/**
-	 * This method initializes visibilityComboBox	
-	 * 	
-	 * @return javax.swing.JComboBox	
+	 * This method initializes visibilityComboBox
+	 *
+	 * @return javax.swing.JComboBox
 	 */
 	private JComboBox<GroupingComboBoxItem> getVisibilityComboBox() {
 		if (visibilityComboBox == null) {
@@ -287,7 +262,7 @@ public class PluginSidePanel extends JPanel {
 			List<GroupingComboBoxItem> defaultGroupings = new ArrayList<GroupingComboBoxItem>();
 			defaultGroupings.add(new GroupingComboBoxItem(GroupingEntity.ALL, "all users"));
 			defaultGroupings.add(new GroupingComboBoxItem(GroupingEntity.USER, PluginProperties.getUsername()));
-			
+
 			(new UpdateVisibilityAction(jabRefFrame, visibilityComboBox, defaultGroupings)).actionPerformed(null);
 			visibilityComboBox.addItemListener(new VisibilityItemListener());
 		}
@@ -295,9 +270,9 @@ public class PluginSidePanel extends JPanel {
 	}
 
 	/**
-	 * This method initializes tagListScrollPane	
-	 * 	
-	 * @return javax.swing.JScrollPane	
+	 * This method initializes tagListScrollPane
+	 *
+	 * @return javax.swing.JScrollPane
 	 */
 	private JScrollPane getTagListScrollPane() {
 		if (tagListScrollPane == null) {
@@ -310,9 +285,9 @@ public class PluginSidePanel extends JPanel {
 	}
 
 	/**
-	 * This method initializes settingsButton	
-	 * 	
-	 * @return javax.swing.JButton	
+	 * This method initializes settingsButton
+	 *
+	 * @return javax.swing.JButton
 	 */
 	private JButton getSettingsButton() {
 		if (settingsButton == null) {
@@ -322,9 +297,9 @@ public class PluginSidePanel extends JPanel {
 	}
 
 	/**
-	 * This method initializes tagCloudPanel	
-	 * 	
-	 * @return javax.swing.JEditorPane	
+	 * This method initializes tagCloudPanel
+	 *
+	 * @return javax.swing.JEditorPane
 	 */
 	private JEditorPane getTagCloudPanel() {
 		if (tagCloudPanel == null) {
@@ -334,9 +309,9 @@ public class PluginSidePanel extends JPanel {
 			tagCloudPanel.setFont(new Font("SansSerif", Font.PLAIN, 12));
 			tagCloudPanel.setBackground(SystemColor.control);
 			tagCloudPanel.addHyperlinkListener(new PluginHyperLinkListener(jabRefFrame, getVisibilityComboBox()));
-			
+
 			if(PluginProperties.getUpdateTagsOnStartUp()) {
-				
+
 				(new RefreshTagListAction(jabRefFrame, tagCloudPanel, getVisibilityComboBox())).actionPerformed(null);
 			}
 		}

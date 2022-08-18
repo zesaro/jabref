@@ -1,5 +1,6 @@
 package org.jabref.model.strings;
 
+import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -761,4 +762,19 @@ public class StringUtil {
     public static boolean containsWhitespace(String s) {
         return s.chars().anyMatch(Character::isWhitespace);
     }
+
+    /**
+     * Encodes a string to UTF8
+     *
+     * @param string the string which should be encoded
+     * @return the encoded string or null
+     */
+    public static String toUTF8(String string) {
+        return Optional.ofNullable(string).map(s -> s.getBytes(StandardCharsets.UTF_8)).map(String::new).orElse(null);
+    }
+
+    public static boolean isEmpty(String s) {
+        return s == null || "".equals(s) || "".equals(s.trim());
+    }
+
 }

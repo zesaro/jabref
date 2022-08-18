@@ -1,28 +1,3 @@
-/**
- *  
- *  JabRef Bibsonomy Plug-in - Plugin for the reference management 
- * 		software JabRef (http://jabref.sourceforge.net/) 
- * 		to fetch, store and delete entries from BibSonomy.
- *   
- *  Copyright (C) 2008 - 2011 Knowledge & Data Engineering Group, 
- *                            University of Kassel, Germany
- *                            http://www.kde.cs.uni-kassel.de/
- *  
- *  This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public License
- *  as published by the Free Software Foundation; either version 2
- *  of the License, or (at your option) any later version.
- * 
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *  
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
-
 package org.bibsonomy.plugin.jabref.gui;
 
 import javax.swing.JPanel;
@@ -64,9 +39,9 @@ import java.util.List;
 public class PluginSettingsDialog extends JDialog {
 
 	private static final long serialVersionUID = 1L;
-	
+
 	private final JabRefFrame jabRefFrame;
-	
+
 	private JPanel jContentPane = null;
 	private JPanel buttonsPanel = null;
 	private JButton saveButton = null;
@@ -122,7 +97,7 @@ public class PluginSettingsDialog extends JDialog {
 
 	/**
 	 * This method initializes this
-	 * 
+	 *
 	 * @return void
 	 */
 	private void initialize() {
@@ -137,7 +112,7 @@ public class PluginSettingsDialog extends JDialog {
 
 	/**
 	 * This method initializes jContentPane
-	 * 
+	 *
 	 * @return javax.swing.JPanel
 	 */
 	private JPanel getJContentPane() {
@@ -155,9 +130,9 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes buttonsPanel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes buttonsPanel
+	 *
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getButtonsPanel() {
 		if (buttonsPanel == null) {
@@ -183,9 +158,9 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes saveButton	
-	 * 	
-	 * @return javax.swing.JButton	
+	 * This method initializes saveButton
+	 *
+	 * @return javax.swing.JButton
 	 */
 	private JButton getSaveButton() {
 		if (saveButton == null) {
@@ -195,9 +170,9 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes whitespacePanel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes whitespacePanel
+	 *
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getWhitespacePanel() {
 		if (whitespacePanel == null) {
@@ -208,9 +183,9 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes cancelButton	
-	 * 	
-	 * @return javax.swing.JButton	
+	 * This method initializes cancelButton
+	 *
+	 * @return javax.swing.JButton
 	 */
 	private JButton getCancelButton() {
 		if (cancelButton == null) {
@@ -220,9 +195,9 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes settingsPane	
-	 * 	
-	 * @return javax.swing.JTabbedPane	
+	 * This method initializes settingsPane
+	 *
+	 * @return javax.swing.JTabbedPane
 	 */
 	private JTabbedPane getSettingsPane() {
 		if (settingsPane == null) {
@@ -233,53 +208,53 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes generalSettingsPanel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes generalSettingsPanel
+	 *
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getGeneralSettingsPanel() {
 		if (generalSettingsPanel == null) {
-			
+
 			tagCloudOrderHintLabel = new JLabel();
 			tagCloudOrderHintLabel.setText("Tag cloud ordering is not available when importing posts from all users");
 			tagCloudOrderHintLabel.setFont(new Font("Dialog", Font.ITALIC, 10));
-			
+
 			tagCloudOrderLabel = new JLabel();
 			tagCloudOrderLabel.setText("Tag cloud order");
-		
+
 			tagSizeLabel = new JLabel();
 			tagSizeLabel.setText("Tag cloud size");
-			
+
 			numberOfPostsLabel = new JLabel();
 			numberOfPostsLabel.setText("Number of Posts to fetch per Request");
-			
-		
+
+
 			extraFieldsHintLabel = new JLabel();
 			extraFieldsHintLabel.setText("You have to restart JabRef in order to see newly added or removed extra fields.");
 			extraFieldsHintLabel.setFont(new Font("Dialog", Font.ITALIC, 10));
-			
+
 			extraFieldsLabel = new JLabel();
 			extraFieldsLabel.setText("Extra fields");
-			
+
 			defaultVisibilityLabel = new JLabel();
 			defaultVisibilityLabel.setText("Default visibility");
-			
+
 			apiKeyHintLabel = new JLabel();
 			apiKeyHintLabel.setText("You can find your API key at the settings page at http://www.bibsonomy.org");
 			apiKeyHintLabel.setFont(new Font("Dialog", Font.ITALIC, 10));
-			
+
 			apiKeyLabel = new JLabel();
 			apiKeyLabel.setText("API key");
-			
+
 			userNameLabel = new JLabel();
 			userNameLabel.setText("Username");
 			apiUrlLabel = new JLabel();
 			apiUrlLabel.setText("Application URL");
-			
+
 			openDatabasePropertiesLabel = new JLabel();
 			openDatabasePropertiesLabel.setText("Set file directories");
-			
-			
+
+
 			//y = 0
 			GridBagConstraints gridBagConstraints2 = new GridBagConstraints();
 			gridBagConstraints2.gridx = 1;
@@ -288,7 +263,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints2.insets = new Insets(0, 0, 3, 0);
 			gridBagConstraints2.gridwidth = 6;
 			gridBagConstraints2.gridy = 0;
-			
+
 			//y = 1
 			GridBagConstraints gridBagConstraints24 = new GridBagConstraints();
 			gridBagConstraints24.gridy = 1;
@@ -296,7 +271,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints24.fill = GridBagConstraints.HORIZONTAL;
 			gridBagConstraints24.insets = new Insets(0, 0, 3, 3);
 			gridBagConstraints24.anchor = GridBagConstraints.WEST;
-			
+
 			GridBagConstraints gridBagConstraints25 = new GridBagConstraints();
 			gridBagConstraints25.gridy = 1;
 			gridBagConstraints25.gridx = 2;
@@ -304,7 +279,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints25.weightx = 1.0;
 			gridBagConstraints25.insets = new Insets(0, 0, 3, 0);
 			gridBagConstraints25.gridwidth = 2;
-			
+
 			//y = 2
 			GridBagConstraints gridBagConstraints16 = new GridBagConstraints();
 			gridBagConstraints16.gridy = 2;
@@ -312,7 +287,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints16.anchor = GridBagConstraints.WEST;
 			gridBagConstraints16.fill = GridBagConstraints.HORIZONTAL;
 			gridBagConstraints16.insets = new Insets(0, 0, 3, 3);
-			
+
 			GridBagConstraints gridBagConstraints26 = new GridBagConstraints();
 			gridBagConstraints26.gridy = 2;
 			gridBagConstraints26.gridx = 2;
@@ -320,7 +295,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints26.weightx = 1.0;
 			gridBagConstraints26.insets = new Insets(0, 0, 3, 0);
 			gridBagConstraints26.gridwidth = 2;
-			
+
 			//y = 3
 			GridBagConstraints gridBagConstraints27 = new GridBagConstraints();
 			gridBagConstraints27.gridy = 3;
@@ -328,7 +303,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints27.anchor = GridBagConstraints.WEST;
 			gridBagConstraints27.fill = GridBagConstraints.HORIZONTAL;
 			gridBagConstraints27.insets = new Insets(0, 0, 3, 0);
-			
+
 			//y = 4
 			GridBagConstraints gridBagConstraints21 = new GridBagConstraints();
 			gridBagConstraints21.gridy = 4;
@@ -336,7 +311,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints21.anchor = GridBagConstraints.WEST;
 			gridBagConstraints21.fill = GridBagConstraints.HORIZONTAL;
 			gridBagConstraints21.insets = new Insets(0, 0, 0, 3);
-			
+
 			GridBagConstraints gridBagConstraints22 = new GridBagConstraints();
 			gridBagConstraints22.gridy = 4;
 			gridBagConstraints22.gridx = 2;
@@ -346,7 +321,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints22.ipadx = 2;
 			gridBagConstraints22.ipady = 2;
 			gridBagConstraints22.insets = new Insets(0, 0, 3, 0);
-			
+
 			//y = 5
 			GridBagConstraints gridBagConstraints23 = new GridBagConstraints();
 			gridBagConstraints23.gridy = 5;
@@ -355,7 +330,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints23.insets = new Insets(0, 0, 3, 0);
 			gridBagConstraints23.fill = GridBagConstraints.HORIZONTAL;
 			gridBagConstraints23.gridwidth = 4;
-			
+
 			//y = 6
 			GridBagConstraints gridBagConstraints9 = new GridBagConstraints();
 			gridBagConstraints9.gridy = 6;
@@ -365,7 +340,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints9.weightx = 1.0;
 			gridBagConstraints9.insets = new Insets(0, 0, 3, 0);
 			gridBagConstraints9.gridwidth = 7;
-			
+
 			//y = 8
 			GridBagConstraints gridBagConstraints10 = new GridBagConstraints();
 			gridBagConstraints10.gridy = 8;
@@ -375,7 +350,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints10.weightx = 1.0;
 			gridBagConstraints10.insets = new Insets(0, 0, 3, 0);
 			gridBagConstraints10.gridwidth = 5;
-			
+
 			//y = 9
 			GridBagConstraints gridBagConstraints12 = new GridBagConstraints();
 			gridBagConstraints12.gridy = 9;
@@ -385,8 +360,8 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints12.weightx = 1.0;
 			gridBagConstraints12.insets = new Insets(0, 0, 3, 0);
 			gridBagConstraints12.gridwidth = 5;
-			
-			
+
+
 			//y = 10
 			GridBagConstraints gridBagConstraints13 = new GridBagConstraints();
 			gridBagConstraints13.gridy = 10;
@@ -395,8 +370,8 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints13.fill = GridBagConstraints.HORIZONTAL;
 			gridBagConstraints13.insets = new Insets(0, 0, 3, 0);
 			gridBagConstraints13.gridwidth = 5;
-		
-			
+
+
 			//y = 14
 			GridBagConstraints gridBagConstraints31 = new GridBagConstraints();
 			gridBagConstraints31.gridy = 14;
@@ -406,7 +381,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints31.weightx = 1.0;
 			gridBagConstraints31.insets = new Insets(0, 0, 3, 0);
 			gridBagConstraints31.gridwidth = 1;
-			
+
 			GridBagConstraints gridBagConstraints32 = new GridBagConstraints();
 			gridBagConstraints32.gridy = 14;
 			gridBagConstraints32.gridx = 2;
@@ -415,7 +390,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints32.weightx = 1;
 			gridBagConstraints32.insets = new Insets(0, 0, 3, 0);
 			gridBagConstraints32.gridwidth = 1;
-			
+
 			//y = 15
 			GridBagConstraints gridBagConstraints14 = new GridBagConstraints();
 			gridBagConstraints14.gridy = 15;
@@ -424,7 +399,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints14.fill = GridBagConstraints.HORIZONTAL;
 			gridBagConstraints14.weightx = 0.1;
 			gridBagConstraints14.insets = new Insets(0, 0, 0, 3);
-			
+
 			GridBagConstraints gridBagConstraints15 = new GridBagConstraints();
 			gridBagConstraints15.gridy = 15;
 			gridBagConstraints15.gridx = 2;
@@ -432,7 +407,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints15.weightx = 1.0;
 			gridBagConstraints15.insets = new Insets(0, 0, 3, 0);
 			gridBagConstraints15.gridwidth = 5;
-			
+
 			//y = 16
 			GridBagConstraints gridBagConstraints17 = new GridBagConstraints();
 			gridBagConstraints17.gridy = 16;
@@ -441,7 +416,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints17.fill = GridBagConstraints.HORIZONTAL;
 			gridBagConstraints17.weightx = 0.1;
 			gridBagConstraints17.insets = new Insets(0, 0, 0, 3);
-			
+
 			GridBagConstraints gridBagConstraints18 = new GridBagConstraints();
 			gridBagConstraints18.gridy = 16;
 			gridBagConstraints18.gridx = 2;
@@ -451,7 +426,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints18.ipady = 2;
 			gridBagConstraints18.insets = new Insets(0, 0, 3, 0);
 			gridBagConstraints18.gridwidth = 5;
-			
+
 			//y = 17
 			GridBagConstraints gridBagConstraints19 = new GridBagConstraints();
 			gridBagConstraints19.gridy = 17;
@@ -460,7 +435,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints19.insets = new Insets(0, 0, 3, 0);
 			gridBagConstraints19.fill = GridBagConstraints.HORIZONTAL;
 			gridBagConstraints19.gridwidth = 4;
-			
+
 			//y = 19
 			GridBagConstraints gridBagConstraints20 = new GridBagConstraints();
 			gridBagConstraints20.gridy = 19;
@@ -469,7 +444,7 @@ public class PluginSettingsDialog extends JDialog {
 			gridBagConstraints20.weightx = 1.0;
 			gridBagConstraints20.weighty = 1.0;
 			gridBagConstraints20.gridwidth = 8;
-			
+
 			generalSettingsPanel = new JPanel();
 			generalSettingsPanel.setLayout(new GridBagLayout());
 			generalSettingsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
@@ -492,28 +467,28 @@ public class PluginSettingsDialog extends JDialog {
 			generalSettingsPanel.add(tagCloudOrderLabel, gridBagConstraints16);
 			generalSettingsPanel.add(getTagCloudOrderComboBox(), gridBagConstraints26);
 			generalSettingsPanel.add(tagCloudOrderHintLabel, gridBagConstraints27);
-			
+
 			generalSettingsPanel.add(openDatabasePropertiesLabel, gridBagConstraints31);
 			generalSettingsPanel.add(getOpenDatabasePropertiesButton(), gridBagConstraints32);
-			
+
 		}
 		return generalSettingsPanel;
 	}
 
 	/**
-	 * This method initializes credentialsPanel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes credentialsPanel
+	 *
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getCredentialsPanel() {
 		if (credentialsPanel != null) {
 			return credentialsPanel;
 		}
-		
+
 		credentialsPanel = new JPanel();
 		credentialsPanel.setLayout(new GridBagLayout());
 		credentialsPanel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder(null, "Credentials", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, new Font("Dialog", Font.BOLD, 12), new Color(51, 51, 51)), BorderFactory.createEmptyBorder(3, 3, 3, 3)));
-		
+
 		final GridBagConstraints leftConstr = new GridBagConstraints();
 		leftConstr.anchor = GridBagConstraints.WEST;
 		leftConstr.insets = new Insets(0, 0, 3, 3);
@@ -521,7 +496,7 @@ public class PluginSettingsDialog extends JDialog {
 		leftConstr.gridy = 0;
 		leftConstr.weightx = 0.1;
 		//leftConstr.fill = GridBagConstraints.HORIZONTAL;
-		
+
 		final GridBagConstraints rightConstr = new GridBagConstraints();
 		rightConstr.anchor = GridBagConstraints.WEST;
 		rightConstr.ipadx = 2;
@@ -530,35 +505,35 @@ public class PluginSettingsDialog extends JDialog {
 		rightConstr.gridy = 0;
 		rightConstr.weightx = 0.9;
 		rightConstr.fill = GridBagConstraints.HORIZONTAL;
-		
+
 		credentialsPanel.add(apiUrlLabel, leftConstr);
 		credentialsPanel.add(getApiUrlTextField(), rightConstr);
 		leftConstr.gridy++;
 		rightConstr.gridy++;
-		
+
 		credentialsPanel.add(userNameLabel, leftConstr);
 		credentialsPanel.add(getUsernameTextField(), rightConstr);
 		leftConstr.gridy++;
 		rightConstr.gridy++;
-		
+
 		credentialsPanel.add(apiKeyLabel, leftConstr);
 		credentialsPanel.add(getApiKeyTextField(), rightConstr);
 		leftConstr.gridy++;
 		rightConstr.gridy++;
-		
+
 		rightConstr.ipadx = 0;
 		rightConstr.ipady = 0;
 		credentialsPanel.add(getStoreAPIKeyCheckBox(), rightConstr);
 		rightConstr.gridy++;
-		
+
 		credentialsPanel.add(apiKeyHintLabel, rightConstr);
 		rightConstr.gridy++;
-		
+
 		changingCredentialsHintLabel = new JLabel();
 		changingCredentialsHintLabel.setText("Don't forget to hit the refresh button after changing credentials!");
 		changingCredentialsHintLabel.setFont(new Font("Dialog", Font.ITALIC, 10));
 		credentialsPanel.add(changingCredentialsHintLabel, rightConstr);
-			
+
 		return credentialsPanel;
 	}
 
@@ -570,9 +545,9 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes apiKeyTextField	
-	 * 	
-	 * @return javax.swing.JTextField	
+	 * This method initializes apiKeyTextField
+	 *
+	 * @return javax.swing.JTextField
 	 */
 	private JTextField getApiKeyTextField() {
 		if (apiKeyTextField == null) {
@@ -580,12 +555,12 @@ public class PluginSettingsDialog extends JDialog {
 		}
 		return apiKeyTextField;
 	}
-	
+
 
 	/**
-	 * This method initializes apiUrlTextField	
-	 * 	
-	 * @return javax.swing.JTextField	
+	 * This method initializes apiUrlTextField
+	 *
+	 * @return javax.swing.JTextField
 	 */
 	private JTextField getApiUrlTextField() {
 		if (apiUrlTextField == null) {
@@ -595,9 +570,9 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes storeAPIKeyCheckBox	
-	 * 	
-	 * @return javax.swing.JCheckBox	
+	 * This method initializes storeAPIKeyCheckBox
+	 *
+	 * @return javax.swing.JCheckBox
 	 */
 	private JCheckBox getStoreAPIKeyCheckBox() {
 		if (storeAPIKeyCheckBox == null) {
@@ -609,9 +584,9 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes ignoreOneTagWarningCheckBox	
-	 * 	
-	 * @return javax.swing.JCheckBox	
+	 * This method initializes ignoreOneTagWarningCheckBox
+	 *
+	 * @return javax.swing.JCheckBox
 	 */
 	private JCheckBox getIgnoreOneTagWarningCheckBox() {
 		if (ignoreOneTagWarningCheckBox == null) {
@@ -623,9 +598,9 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes updateTagsCheckBox	
-	 * 	
-	 * @return javax.swing.JCheckBox	
+	 * This method initializes updateTagsCheckBox
+	 *
+	 * @return javax.swing.JCheckBox
 	 */
 	private JCheckBox getUpdateTagsCheckBox() {
 		if (updateTagsCheckBox == null) {
@@ -637,9 +612,9 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes uploadDocumentsCheckBox	
-	 * 	
-	 * @return javax.swing.JCheckBox	
+	 * This method initializes uploadDocumentsCheckBox
+	 *
+	 * @return javax.swing.JCheckBox
 	 */
 	private JCheckBox getUploadDocumentsCheckBox() {
 		if (uploadDocumentsCheckBox == null) {
@@ -651,9 +626,9 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes downloadDocumentsCheckBox	
-	 * 	
-	 * @return javax.swing.JCheckBox	
+	 * This method initializes downloadDocumentsCheckBox
+	 *
+	 * @return javax.swing.JCheckBox
 	 */
 	private JCheckBox getDownloadDocumentsCheckBox() {
 		if (downloadDocumentsCheckBox == null) {
@@ -665,20 +640,20 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes defaultVisibilityComboBox	
-	 * 	
-	 * @return javax.swing.JComboBox	
+	 * This method initializes defaultVisibilityComboBox
+	 *
+	 * @return javax.swing.JComboBox
 	 */
 	private JComboBox<GroupingComboBoxItem> getDefaultVisibilityComboBox() {
 		if (defaultVisibilityComboBox == null) {
-			
+
 			List<GroupingComboBoxItem> items = new LinkedList<GroupingComboBoxItem>();
 			items.add(new GroupingComboBoxItem(GroupingEntity.ALL, "Public"));
 			items.add(new GroupingComboBoxItem(GroupingEntity.USER, "Private"));
-			
+
 			defaultVisibilityComboBox = new JComboBox<GroupingComboBoxItem>();
 			(new UpdateVisibilityAction(jabRefFrame, defaultVisibilityComboBox, items)).actionPerformed(null);
-			
+
 			//Set selected Value
 			int itemCount = defaultVisibilityComboBox.getItemCount();
 			for(int i = 0; i < itemCount; i++) {
@@ -691,9 +666,9 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes extraFieldsTextField	
-	 * 	
-	 * @return javax.swing.JTextField	
+	 * This method initializes extraFieldsTextField
+	 *
+	 * @return javax.swing.JTextField
 	 */
 	private JTextField getExtraFieldsTextField() {
 		if (extraFieldsTextField == null) {
@@ -704,9 +679,9 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes generalSettingsWhitespacePanel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes generalSettingsWhitespacePanel
+	 *
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getGeneralSettingsWhitespacePanel() {
 		if (generalSettingsWhitespacePanel == null) {
@@ -717,9 +692,9 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes numberOfPostsTextField	
-	 * 	
-	 * @return javax.swing.JTextField	
+	 * This method initializes numberOfPostsTextField
+	 *
+	 * @return javax.swing.JTextField
 	 */
 	private JSpinner getNumberOfPostsSpinner() {
 		if (numberOfPostsSpinner == null) {
@@ -729,9 +704,9 @@ public class PluginSettingsDialog extends JDialog {
 	}
 
 	/**
-	 * This method initializes noWarningOnMorePostsCheckBox	
-	 * 	
-	 * @return javax.swing.JCheckBox	
+	 * This method initializes noWarningOnMorePostsCheckBox
+	 *
+	 * @return javax.swing.JCheckBox
 	 */
 	private JCheckBox getNoWarningOnMorePostsCheckBox() {
 		if (noWarningOnMorePostsCheckBox == null) {
@@ -741,35 +716,35 @@ public class PluginSettingsDialog extends JDialog {
 		}
 		return noWarningOnMorePostsCheckBox;
 	}
-	
+
 	private JSpinner getTagCloudSizeSpinner() {
-		
+
 		if(tagCloudSizeSpinner == null) {
-			
+
 			tagCloudSizeSpinner = new JSpinner(new SpinnerNumberModel(PluginProperties.getTagCloudSize(), 20, 1000, 1));
 		}
-		
+
 		return tagCloudSizeSpinner;
 	}
 
 	/**
-	 * This method initializes tagCloudOrderComboBox	
-	 * 	
-	 * @return javax.swing.JComboBox	
+	 * This method initializes tagCloudOrderComboBox
+	 *
+	 * @return javax.swing.JComboBox
 	 */
 	private JComboBox<?> getTagCloudOrderComboBox() {
 		if (tagCloudOrderComboBox == null) {
-			
+
 			OrderComboBoxItem[] items = new OrderComboBoxItem[] {
-					
+
 				new OrderComboBoxItem(Order.FREQUENCY, "Frequency"),
 				new OrderComboBoxItem(Order.ALPH, "Alphabethical"),
 				new OrderComboBoxItem(Order.FOLKRANK, "Folkrank"),
 				new OrderComboBoxItem(Order.ADDED, "Date")
 			};
-			
+
 			tagCloudOrderComboBox = new JComboBox<Object>(items);
-			
+
 			int itemCount = tagCloudOrderComboBox.getItemCount();
 			for(int i = 0; i < itemCount; i++) {
 				if(((OrderComboBoxItem)tagCloudOrderComboBox.getItemAt(i)).getKey() == PluginProperties.getTagCloudOrder())
@@ -778,7 +753,7 @@ public class PluginSettingsDialog extends JDialog {
 		}
 		return tagCloudOrderComboBox;
 	}
-	
+
 	/**
 	 * This method initializes openDatabasePropertiesButton
 	 */

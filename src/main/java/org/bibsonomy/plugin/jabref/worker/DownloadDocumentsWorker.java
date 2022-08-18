@@ -1,28 +1,3 @@
-/**
- *  
- *  JabRef Bibsonomy Plug-in - Plugin for the reference management 
- * 		software JabRef (http://jabref.sourceforge.net/) 
- * 		to fetch, store and delete entries from BibSonomy.
- *   
- *  Copyright (C) 2008 - 2011 Knowledge & Data Engineering Group, 
- *                            University of Kassel, Germany
- *                            http://www.kde.cs.uni-kassel.de/
- *  
- *  This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public License
- *  as published by the Free Software Foundation; either version 2
- *  of the License, or (at your option) any later version.
- * 
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *  
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
-
 package org.bibsonomy.plugin.jabref.worker;
 
 import java.net.URLEncoder;
@@ -51,13 +26,13 @@ import ca.odell.glazedlists.BasicEventList;
 public class DownloadDocumentsWorker extends AbstractPluginWorker {
 
 	private static final Log LOG = LogFactory.getLog(DownloadDocumentsWorker.class);
-	
+
 	private static final String BIBTEX_FILE_FIELD = "file";
-	
-	
+
+
 	private BibtexEntry entry;
 	private boolean isImport;
-	
+
 	public DownloadDocumentsWorker(JabRefFrame jabRefFrame, BibtexEntry entry, boolean isImport) {
 		super(jabRefFrame);
 		this.entry = entry;
@@ -65,12 +40,12 @@ public class DownloadDocumentsWorker extends AbstractPluginWorker {
 	}
 
 	public void run() {
-		
+
 		if (isImport && !PluginProperties.getDownloadDocumentsOnImport()) {
 			return;
 		}
 
-		
+
 		String intrahash = entry.getField("intrahash");
 		if (intrahash != null && !"".equals(intrahash)) {
 			final Post<? extends Resource> post;
@@ -97,31 +72,31 @@ public class DownloadDocumentsWorker extends AbstractPluginWorker {
 				} catch (Exception ex) {
 					LOG.error("Failed downloading file: " + document.getFileName(), ex);
 				}
-				
+
 				try {
 					BasicEventList<BibtexEntry> list = new BasicEventList<BibtexEntry>();
 					String downloadedFileBibTex = ":" + document.getFileName() + ":" + FileUtil.getFileExtension(document.getFileName()).toUpperCase();
-					
+
 					String entryFileValue = entry.getField(BIBTEX_FILE_FIELD);
-					
+
 					list.getReadWriteLock().writeLock().lock();
 					list.add(entry);
 					if(entryFileValue != null && !"".equals(entryFileValue)) {
-						
+
 						if(!entryFileValue.contains(downloadedFileBibTex))
 							entry.setField(BIBTEX_FILE_FIELD, entryFileValue + ";" + downloadedFileBibTex);
 					} else entry.setField(BIBTEX_FILE_FIELD, downloadedFileBibTex);
 					list.getReadWriteLock().writeLock().lock();
-					
+
 				} catch (AuthenticationException e) {
 					(new ShowSettingsDialogAction(jabRefFrame)).actionPerformed(null);
 				} catch (Exception e) {
 					LOG.error("Failed adding file to entry " + entry.getCiteKey(), e);
 				}
-				
+
 			}
 		}
-		
+
 		jabRefFrame.output("Done.");
 	}
 }

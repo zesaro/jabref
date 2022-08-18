@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Vector;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -56,6 +57,7 @@ public class MetaData {
     private final Map<EntryType, String> citeKeyPatterns = new HashMap<>(); // <BibType, Pattern>
     private final Map<String, String> userFileDirectory = new HashMap<>(); // <User, FilePath>
     private final Map<String, Path> laTexFileDirectory = new HashMap<>(); // <User, FilePath>
+    private final Map<String, Vector<String>> bibsonomyData = new HashMap<>();
     private final ObjectProperty<GroupTreeNode> groupsRoot = new SimpleObjectProperty<>(null);
     private final OptionalBinding<GroupTreeNode> groupsRootBinding = new OptionalWrapper<>(groupsRoot);
     private Charset encoding;
@@ -75,6 +77,14 @@ public class MetaData {
      */
     public MetaData() {
         // Do nothing
+    }
+
+    public void addBibsonomyData(String key, Vector<String> value) {
+        bibsonomyData.put(key, value);
+    }
+
+    public Vector<String> getBibsonomyData(String key) {
+        return bibsonomyData.get(key);
     }
 
     public Optional<SaveOrderConfig> getSaveOrderConfig() {

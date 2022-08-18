@@ -324,6 +324,13 @@ License: Apache-2.0
 ```
 
 ```yaml
+Id:      org.bibsonomy:bibsonomy-rest-client
+Project: -
+URL:     https://www.-.org/
+License: -
+```
+
+```yaml
 Id:      org.bouncycastle:bcprov-jdk15on
 Project: The Legion of the Bouncy Castle
 URL:     https://www.bouncycastle.org/

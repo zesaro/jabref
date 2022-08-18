@@ -117,6 +117,8 @@ import org.jabref.model.strings.StringUtil;
 
 import com.tobiasdiez.easybind.EasyBind;
 import net.harawata.appdirs.AppDirsFactory;
+import org.bibsonomy.common.enums.GroupingEntity;
+import org.bibsonomy.model.enums.Order;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -133,6 +135,7 @@ import org.slf4j.LoggerFactory;
 public class JabRefPreferences implements PreferencesService {
 
     // Push to application preferences
+    public static final String PUSH_BIBSONOMY_PROPERTIES = "bibsonomyProperties";
     public static final String PUSH_EMACS_PATH = "emacsPath";
     public static final String PUSH_EMACS_ADDITIONAL_PARAMETERS = "emacsParameters";
     public static final String PUSH_LYXPIPE = "lyxpipe";
@@ -141,6 +144,22 @@ public class JabRefPreferences implements PreferencesService {
     public static final String PUSH_TEXMAKER_PATH = "texmakerPath";
     public static final String PUSH_VIM_SERVER = "vimServer";
     public static final String PUSH_VIM = "vim";
+
+    public static final String BIBSONOMY_API_URL = "bibsonomyApiUrl";
+    public static final String BIBSONOMY_API_USERNAME = "bibsonomyApiUsername";
+    public static final String BIBSONOMY_API_KEY = "bibsonomyApiKey";
+    public static final String BIBSONOMY_SAVE_API_KEY = "bibsonomySaveapikey";
+    public static final String BIBSONOMY_DOCUMENTS_IMPORT = "bibsonomyDocumentsImport";
+    public static final String BIBSONOMY_DOCUMENTS_EXPORT = "bibsonomyDocumentsExport";
+    public static final String BIBSONOMY_TAGS_REFRESH_ON_STARTUP = "bibsonomyTagsRefreshonstartup";
+    public static final String BIBSONOMY_TAGS_IGNORE_NO_TAGS = "bibsonomyTagsIgnorenotags";
+    public static final String BIBSONOMY_NUMBER_OF_POSTS_PER_REQUEST = "bibsonomyRequestSize";
+    public static final String BIBSONOMY_IGNORE_WARNING_MORE_POSTS = "bibsonomyRequestSizeIgnorewarning";
+    public static final String BIBSONOMY_VISIBILITY = "bibsonomyVisibilty";
+    public static final String BIBSONOMY_TAG_CLOUD_SIZE = "bibsonomyTagcloudSize";
+    public static final String BIBSONOMY_SIDE_PANE_VISIBILITY_TYPE = "bibsonomySidepaneVisibilityType";
+    public static final String BIBSONOMY_SIDE_PANE_VISIBILITY_NAME = "bibsonomySidepaneVisibilityName";
+    public static final String BIBSONOMY_TAG_CLOUD_ORDER = "bibsonomyTagcloudOrder";
 
     /* contents of the defaults HashMap that are defined in this class.
      * There are more default parameters in this map which belong to separate preference classes.
@@ -439,6 +458,7 @@ public class JabRefPreferences implements PreferencesService {
     private AppearancePreferences appearancePreferences;
     private ImporterPreferences importerPreferences;
     private GrobidPreferences grobidPreferences;
+    private BibsonomyPreferences bibsonomyPreferences;
     private ProtectedTermsPreferences protectedTermsPreferences;
     private MrDlibPreferences mrDlibPreferences;
     private EntryEditorPreferences entryEditorPreferences;
@@ -617,6 +637,23 @@ public class JabRefPreferences implements PreferencesService {
         defaults.put(PROTECTED_TERMS_DISABLED_INTERNAL, "");
         defaults.put(PROTECTED_TERMS_ENABLED_EXTERNAL, "");
         defaults.put(PROTECTED_TERMS_DISABLED_EXTERNAL, "");
+
+        // BibSonomy
+        defaults.put(BIBSONOMY_API_URL, "https://www.bibsonomy.org/api/");
+        defaults.put(BIBSONOMY_API_USERNAME, "jabreftest");
+        defaults.put(BIBSONOMY_API_KEY, "4cc8425ab4dfcce2c5d1b5a96d2c7134");
+        defaults.put(BIBSONOMY_SAVE_API_KEY, true);
+        defaults.put(BIBSONOMY_DOCUMENTS_IMPORT, true);
+        defaults.put(BIBSONOMY_DOCUMENTS_EXPORT, true);
+        defaults.put(BIBSONOMY_TAGS_REFRESH_ON_STARTUP, false);
+        defaults.put(BIBSONOMY_TAGS_IGNORE_NO_TAGS, false);
+        defaults.put(BIBSONOMY_NUMBER_OF_POSTS_PER_REQUEST, 20);
+        defaults.put(BIBSONOMY_IGNORE_WARNING_MORE_POSTS, false);
+        defaults.put(BIBSONOMY_VISIBILITY, "public");
+        defaults.put(BIBSONOMY_TAG_CLOUD_SIZE, 100);
+        defaults.put(BIBSONOMY_SIDE_PANE_VISIBILITY_TYPE, GroupingEntity.ALL.toString());
+        defaults.put(BIBSONOMY_SIDE_PANE_VISIBILITY_NAME, "all users");
+        defaults.put(BIBSONOMY_TAG_CLOUD_ORDER, Order.FREQUENCY.toString());
 
         // OpenOffice/LibreOffice
         if (OS.WINDOWS) {
@@ -2836,6 +2873,34 @@ public class JabRefPreferences implements PreferencesService {
         for (int i = 0; i < importersArray.length; i++) {
             putStringList(CUSTOM_IMPORT_FORMAT + i, importersArray[i].getAsStringList());
         }
+    }
+
+    @Override
+    public BibsonomyPreferences getBibsonomyPreferences() {
+        if (Objects.nonNull(bibsonomyPreferences)) {
+            return bibsonomyPreferences;
+        }
+
+        bibsonomyPreferences = new BibsonomyPreferences(
+                get(BIBSONOMY_API_URL),
+                get(BIBSONOMY_API_USERNAME),
+                get(BIBSONOMY_API_KEY),
+                get(BIBSONOMY_SIDE_PANE_VISIBILITY_NAME),
+                get(BIBSONOMY_VISIBILITY),
+                GroupingEntity.getGroupingEntity(get(BIBSONOMY_SIDE_PANE_VISIBILITY_TYPE)),
+                Order.getOrderByName(get(BIBSONOMY_TAG_CLOUD_ORDER)),
+                getBoolean(BIBSONOMY_DOCUMENTS_IMPORT),
+                getBoolean(BIBSONOMY_DOCUMENTS_EXPORT),
+                getBoolean(BIBSONOMY_SAVE_API_KEY),
+                getBoolean(BIBSONOMY_TAGS_REFRESH_ON_STARTUP),
+                getBoolean(BIBSONOMY_IGNORE_WARNING_MORE_POSTS),
+                getBoolean(BIBSONOMY_TAGS_IGNORE_NO_TAGS),
+                getInt(BIBSONOMY_TAG_CLOUD_SIZE),
+                getInt(BIBSONOMY_NUMBER_OF_POSTS_PER_REQUEST));
+
+        // ToDo: EasyBind?
+
+        return bibsonomyPreferences;
     }
 
     private Set<FetcherApiKey> getFetcherKeys() {

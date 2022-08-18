@@ -52,7 +52,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Represents a BibTex / BibLaTeX entry.
  * <p>
- * In case you search for a builder as described in Item 2 of the book "Effective Java", you won't find one. Please use the methods {@link #withCitationKey(String)} and {@link #withField(Field, String)}.
+ * In case you search for a builder as described in Item 2 of the book "Effective Java", you won't find one.
+ * Please use the methods {@link #withCitationKey(String)} and {@link #withField(Field, String)}.
  */
 @AllowedToUseLogic("because it needs access to parser and writers")
 public class BibEntry implements Cloneable {

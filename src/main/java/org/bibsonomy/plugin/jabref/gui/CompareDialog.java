@@ -1,28 +1,3 @@
-/**
- *  
- *  JabRef Bibsonomy Plug-in - Plugin for the reference management 
- * 		software JabRef (http://jabref.sourceforge.net/) 
- * 		to fetch, store and delete entries from BibSonomy.
- *   
- *  Copyright (C) 2008 - 2011 Knowledge & Data Engineering Group, 
- *                            University of Kassel, Germany
- *                            http://www.kde.cs.uni-kassel.de/
- *  
- *  This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public License
- *  as published by the Free Software Foundation; either version 2
- *  of the License, or (at your option) any later version.
- * 
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *  
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
-
 package org.bibsonomy.plugin.jabref.gui;
 
 import java.awt.Color;
@@ -52,7 +27,7 @@ import org.bibsonomy.plugin.jabref.util.JabRefModelConverter;
 
 /**
  * @author Waldemar Biller <wbi@cs.uni-kassel.de>
- * 
+ *
  */
 public class CompareDialog extends JDialog {
 
@@ -90,7 +65,7 @@ public class CompareDialog extends JDialog {
 
 		CompareDialog cd = new CompareDialog(jabRefFrame);
 		Util.placeDialog(cd, jabRefFrame);
-			
+
 		//set the source of the local and remote bibtex to the views
 		localEntry.setText(generateSource(entry, JabRefModelConverter.convertPost(post)));
 		remoteEntry.setText(generateSource(JabRefModelConverter.convertPost(post), entry));
@@ -112,7 +87,7 @@ public class CompareDialog extends JDialog {
 
 			if (!src.getType().getName().equals(comp.getType().getName())
 					&& !src.getCiteKey().equals(comp.getCiteKey())) {
-				
+
 				//mark entries that differ with yellow
 				source.append("<span style=\"background: yellow\">" + "@"
 						+ src.getType().getName().toUpperCase() + "{"
@@ -121,7 +96,7 @@ public class CompareDialog extends JDialog {
 				source.append("@" + src.getType().getName().toUpperCase() + "{"
 						+ src.getCiteKey());
 			}
-			
+
 			Set<String> commonFields = src.getAllFields();
 			commonFields.addAll(comp.getAllFields());
 
@@ -129,7 +104,7 @@ public class CompareDialog extends JDialog {
 
 				if("owner".equals(field))
 					continue;
-				
+
 				//fields that should be ignored
 				if (!field.startsWith("__") && !field.equals("id")
 						&& !field.equals("timestamp")
@@ -137,7 +112,7 @@ public class CompareDialog extends JDialog {
 						&& !field.equals("interhash")
 						&& src.getField(field) != null
 						&& !src.getField(field).isEmpty()) {
-					
+
 					// compare values of src and comp entry
 					if (comp.getField(field) != null
 							&& !comp.getField(field).isEmpty()
@@ -165,7 +140,7 @@ public class CompareDialog extends JDialog {
 
 	/**
 	 * This method initializes keepLocal
-	 * 
+	 *
 	 * @return javax.swing.JButton
 	 */
 	private JButton getKeepLocal() {
@@ -185,7 +160,7 @@ public class CompareDialog extends JDialog {
 
 	/**
 	 * This method initializes keepRemote
-	 * 
+	 *
 	 * @return javax.swing.JButton
 	 */
 	private JButton getKeepRemote() {
@@ -205,7 +180,7 @@ public class CompareDialog extends JDialog {
 
 	/**
 	 * This method initializes keepLocalAlways
-	 * 
+	 *
 	 * @return javax.swing.JButton
 	 */
 	private JButton getKeepLocalAlways() {
@@ -226,7 +201,7 @@ public class CompareDialog extends JDialog {
 
 	/**
 	 * This method initializes keepRemoteAlways
-	 * 
+	 *
 	 * @return javax.swing.JButton
 	 */
 	private JButton getKeepRemoteAlways() {
@@ -247,7 +222,7 @@ public class CompareDialog extends JDialog {
 
 	/**
 	 * This method initializes cancel
-	 * 
+	 *
 	 * @return javax.swing.JButton
 	 */
 	private JButton getCancel() {
@@ -267,7 +242,7 @@ public class CompareDialog extends JDialog {
 
 	/**
 	 * This method initializes jContentPane
-	 * 
+	 *
 	 * @return javax.swing.JPanel
 	 */
 	private JPanel getJContentPane() {
@@ -317,7 +292,7 @@ public class CompareDialog extends JDialog {
 
 	/**
 	 * This method initializes buttonPanel
-	 * 
+	 *
 	 * @return javax.swing.JPanel
 	 */
 	private JPanel getButtonPanel() {
@@ -339,7 +314,7 @@ public class CompareDialog extends JDialog {
 
 	/**
 	 * This method initializes this
-	 * 
+	 *
 	 * @return void
 	 */
 	private void initialize() {
@@ -351,7 +326,7 @@ public class CompareDialog extends JDialog {
 
 	/**
 	 * This method initializes jScrollPane
-	 * 
+	 *
 	 * @return javax.swing.JScrollPane
 	 */
 	private JScrollPane getJScrollPane() {
@@ -364,7 +339,7 @@ public class CompareDialog extends JDialog {
 
 	/**
 	 * This method initializes remoteEntry
-	 * 
+	 *
 	 * @return javax.swing.JTextPane
 	 */
 	private JTextPane getRemoteEntry() {
@@ -383,7 +358,7 @@ public class CompareDialog extends JDialog {
 
 	/**
 	 * This method initializes jScrollPane1
-	 * 
+	 *
 	 * @return javax.swing.JScrollPane
 	 */
 	private JScrollPane getJScrollPane1() {
@@ -396,7 +371,7 @@ public class CompareDialog extends JDialog {
 
 	/**
 	 * This method initializes localEntry
-	 * 
+	 *
 	 * @return javax.swing.JTextPane
 	 */
 	private JTextPane getLocalEntry() {

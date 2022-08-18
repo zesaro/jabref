@@ -742,6 +742,7 @@ public class JabRefFrame extends BorderPane {
         Menu view = new Menu(Localization.lang("View"));
         Menu tools = new Menu(Localization.lang("Tools"));
         Menu options = new Menu(Localization.lang("Options"));
+        Menu bibsonomy = new Menu("BibSonomy");
         Menu help = new Menu(Localization.lang("Help"));
 
         file.getItems().addAll(
@@ -920,6 +921,13 @@ public class JabRefFrame extends BorderPane {
                 factory.createMenuItem(StandardActions.CUSTOMIZE_ENTRY_TYPES, new CustomizeEntryAction(stateManager, Globals.entryTypesManager))
         );
 
+        // ToDo: Implemente commands
+        bibsonomy.getItems().addAll(
+                factory.createMenuItem(StandardActions.BIBSONOMY_SYNCHRONIZE, null),
+                factory.createMenuItem(StandardActions.BIBSONOMY_DOWNLOAD_DOCUMENT, null),
+                factory.createMenuItem(StandardActions.BIBSONOMY_TOGGLE_TAG_CLOUD, null)
+        );
+
         help.getItems().addAll(
                 factory.createMenuItem(StandardActions.HELP, new HelpAction(HelpFile.CONTENTS, dialogService)),
                 factory.createMenuItem(StandardActions.OPEN_FORUM, new OpenBrowserAction("http://discourse.jabref.org/", dialogService)),
@@ -959,6 +967,7 @@ public class JabRefFrame extends BorderPane {
                 tools,
                 view,
                 options,
+                bibsonomy,
                 help);
         menu.setUseSystemMenuBar(true);
         return menu;
