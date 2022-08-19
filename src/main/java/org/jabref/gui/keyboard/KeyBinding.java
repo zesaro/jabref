@@ -102,6 +102,7 @@ public enum KeyBinding {
     STRING_DIALOG_ADD_STRING("String dialog, add string", Localization.lang("String dialog, add string"), "ctrl+N", KeyBindingCategory.FILE),
     STRING_DIALOG_REMOVE_STRING("String dialog, remove string", Localization.lang("String dialog, remove string"), "shift+DELETE", KeyBindingCategory.FILE),
     SYNCHRONIZE_FILES("Synchronize files", Localization.lang("Synchronize files"), "ctrl+shift+F7", KeyBindingCategory.QUALITY),
+    TOGGLE_BIBSONOMY_INTERFACE("Toggle BibSonomy interface", Localization.lang("Toggle BibSonomy interface"), "alt+5", KeyBindingCategory.VIEW),
     TOGGLE_GROUPS_INTERFACE("Toggle groups interface", Localization.lang("Toggle groups interface"), "alt+3", KeyBindingCategory.VIEW),
     UNABBREVIATE("Unabbreviate", Localization.lang("Unabbreviate"), "ctrl+alt+shift+A", KeyBindingCategory.TOOLS),
     UNDO("Undo", Localization.lang("Undo"), "ctrl+Z", KeyBindingCategory.EDIT),

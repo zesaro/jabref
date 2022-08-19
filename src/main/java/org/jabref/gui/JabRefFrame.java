@@ -54,6 +54,9 @@ import org.jabref.gui.actions.ActionHelper;
 import org.jabref.gui.actions.SimpleCommand;
 import org.jabref.gui.actions.StandardActions;
 import org.jabref.gui.auximport.NewSubLibraryAction;
+import org.jabref.gui.bibsonomy.actions.BibsonomyDownloadDocumentAction;
+import org.jabref.gui.bibsonomy.actions.BibsonomySynchronizeAction;
+import org.jabref.gui.bibsonomy.actions.BibsonomyToggleTagCloudAction;
 import org.jabref.gui.bibtexextractor.ExtractBibtexAction;
 import org.jabref.gui.citationkeypattern.GenerateCitationKeyAction;
 import org.jabref.gui.cleanup.CleanupAction;
@@ -895,10 +898,12 @@ public class JabRefFrame extends BorderPane {
         SidePaneType webSearchPane = SidePaneType.WEB_SEARCH;
         SidePaneType groupsPane = SidePaneType.GROUPS;
         SidePaneType openOfficePane = SidePaneType.OPEN_OFFICE;
+        SidePaneType bibsonomyPane = SidePaneType.BIBSONOMY;
         view.getItems().addAll(
                 factory.createCheckMenuItem(webSearchPane.getToggleAction(), sidePane.getToggleCommandFor(webSearchPane), sidePane.paneVisibleBinding(webSearchPane)),
                 factory.createCheckMenuItem(groupsPane.getToggleAction(), sidePane.getToggleCommandFor(groupsPane), sidePane.paneVisibleBinding(groupsPane)),
                 factory.createCheckMenuItem(openOfficePane.getToggleAction(), sidePane.getToggleCommandFor(openOfficePane), sidePane.paneVisibleBinding(openOfficePane)),
+                factory.createCheckMenuItem(bibsonomyPane.getToggleAction(), sidePane.getToggleCommandFor(bibsonomyPane), sidePane.paneVisibleBinding(bibsonomyPane)),
 
                 new SeparatorMenuItem(),
 
@@ -921,11 +926,11 @@ public class JabRefFrame extends BorderPane {
                 factory.createMenuItem(StandardActions.CUSTOMIZE_ENTRY_TYPES, new CustomizeEntryAction(stateManager, Globals.entryTypesManager))
         );
 
-        // ToDo: Implemente commands
+        // ToDo: Implement commands
         bibsonomy.getItems().addAll(
-                factory.createMenuItem(StandardActions.BIBSONOMY_SYNCHRONIZE, null),
-                factory.createMenuItem(StandardActions.BIBSONOMY_DOWNLOAD_DOCUMENT, null),
-                factory.createMenuItem(StandardActions.BIBSONOMY_TOGGLE_TAG_CLOUD, null)
+                factory.createMenuItem(StandardActions.BIBSONOMY_SYNCHRONIZE, new BibsonomySynchronizeAction()),
+                factory.createMenuItem(StandardActions.BIBSONOMY_DOWNLOAD_DOCUMENT, new BibsonomyDownloadDocumentAction()),
+                factory.createMenuItem(StandardActions.BIBSONOMY_TOGGLE_TAG_CLOUD, new BibsonomyToggleTagCloudAction())
         );
 
         help.getItems().addAll(

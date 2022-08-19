@@ -1,7 +1,6 @@
 package org.jabref.gui.preferences.bibsonomy;
 
 import org.jabref.gui.DialogService;
-import org.jabref.gui.maintable.MainTablePreferences;
 import org.jabref.gui.preferences.PreferenceTabViewModel;
 import org.jabref.logic.preferences.OwnerPreferences;
 import org.jabref.logic.preferences.TimestampPreferences;
@@ -23,7 +22,9 @@ public class BibsonomyTabViewModel implements PreferenceTabViewModel {
     private final OwnerPreferences ownerPreferences;
     private final TimestampPreferences timestampPreferences;
 
-    public BibsonomyTabViewModel(DialogService dialogService, PreferencesService preferencesService, BibsonomyPreferences bibsonomyPreferences, TelemetryPreferences telemetryPreferences, OwnerPreferences ownerPreferences, TimestampPreferences timestampPreferences) {
+    public BibsonomyTabViewModel(DialogService dialogService, PreferencesService preferencesService,
+                                 BibsonomyPreferences bibsonomyPreferences, TelemetryPreferences telemetryPreferences,
+                                 OwnerPreferences ownerPreferences, TimestampPreferences timestampPreferences) {
         this.dialogService = dialogService;
         this.bibsonomyPreferences = bibsonomyPreferences;
         this.preferencesService = preferencesService;
@@ -34,11 +35,9 @@ public class BibsonomyTabViewModel implements PreferenceTabViewModel {
 
     @Override
     public void setValues() {
-
     }
 
     @Override
     public void storeSettings() {
-        MainTablePreferences newMainTablePreferences = preferencesService.getMainTablePreferences();
     }
 }

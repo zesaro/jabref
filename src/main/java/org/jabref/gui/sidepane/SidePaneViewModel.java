@@ -65,18 +65,30 @@ public class SidePaneViewModel extends AbstractViewModel {
         SidePaneComponent sidePaneComponent = sidePaneComponentLookup.get(pane);
         if (sidePaneComponent == null) {
             sidePaneComponent = switch (pane) {
-                case GROUPS -> new GroupsSidePaneComponent(
-                        new ClosePaneAction(pane),
-                        new MoveUpAction(pane),
-                        new MoveDownAction(pane),
-                        sidePaneContentFactory,
-                        preferencesService.getGroupsPreferences(),
-                        dialogService);
-                case WEB_SEARCH, OPEN_OFFICE -> new SidePaneComponent(pane,
-                        new ClosePaneAction(pane),
-                        new MoveUpAction(pane),
-                        new MoveDownAction(pane),
-                        sidePaneContentFactory);
+                case GROUPS ->
+                        new GroupsSidePaneComponent(
+                                new ClosePaneAction(pane),
+                                new MoveUpAction(pane),
+                                new MoveDownAction(pane),
+                                sidePaneContentFactory,
+                                preferencesService.getGroupsPreferences(),
+                                dialogService);
+                case WEB_SEARCH, OPEN_OFFICE ->
+                        new SidePaneComponent(pane,
+                                new ClosePaneAction(pane),
+                                new MoveUpAction(pane),
+                                new MoveDownAction(pane),
+                                sidePaneContentFactory);
+                case BIBSONOMY ->
+                        // ToDo: relevant? or merge to above.
+                        new BibsonomySidePaneComponent(
+                                pane,
+                                new ClosePaneAction(pane),
+                                new MoveUpAction(pane),
+                                new MoveDownAction(pane),
+                                sidePaneContentFactory,
+                                preferencesService.getBibsonomyPreferences(),
+                                dialogService);
             };
             sidePaneComponentLookup.put(pane, sidePaneComponent);
         }

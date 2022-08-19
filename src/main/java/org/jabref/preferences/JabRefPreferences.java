@@ -155,6 +155,7 @@ public class JabRefPreferences implements PreferencesService {
     public static final String BIBSONOMY_TAGS_IGNORE_NO_TAGS = "bibsonomyTagsIgnorenotags";
     public static final String BIBSONOMY_NUMBER_OF_POSTS_PER_REQUEST = "bibsonomyRequestSize";
     public static final String BIBSONOMY_IGNORE_WARNING_MORE_POSTS = "bibsonomyRequestSizeIgnorewarning";
+    public static final String BIBSONOMY_SIDEPANE_VISIBLE = "bibsonomySidepaneVisible";
     public static final String BIBSONOMY_VISIBILITY = "bibsonomyVisibilty";
     public static final String BIBSONOMY_TAG_CLOUD_SIZE = "bibsonomyTagcloudSize";
     public static final String BIBSONOMY_SIDE_PANE_VISIBILITY_TYPE = "bibsonomySidepaneVisibilityType";
@@ -642,13 +643,14 @@ public class JabRefPreferences implements PreferencesService {
         defaults.put(BIBSONOMY_API_URL, "https://www.bibsonomy.org/api/");
         defaults.put(BIBSONOMY_API_USERNAME, "jabreftest");
         defaults.put(BIBSONOMY_API_KEY, "4cc8425ab4dfcce2c5d1b5a96d2c7134");
-        defaults.put(BIBSONOMY_SAVE_API_KEY, true);
-        defaults.put(BIBSONOMY_DOCUMENTS_IMPORT, true);
-        defaults.put(BIBSONOMY_DOCUMENTS_EXPORT, true);
-        defaults.put(BIBSONOMY_TAGS_REFRESH_ON_STARTUP, false);
-        defaults.put(BIBSONOMY_TAGS_IGNORE_NO_TAGS, false);
+        defaults.put(BIBSONOMY_SAVE_API_KEY, Boolean.TRUE);
+        defaults.put(BIBSONOMY_DOCUMENTS_IMPORT, Boolean.TRUE);
+        defaults.put(BIBSONOMY_DOCUMENTS_EXPORT, Boolean.TRUE);
+        defaults.put(BIBSONOMY_TAGS_REFRESH_ON_STARTUP, Boolean.FALSE);
+        defaults.put(BIBSONOMY_TAGS_IGNORE_NO_TAGS, Boolean.FALSE);
         defaults.put(BIBSONOMY_NUMBER_OF_POSTS_PER_REQUEST, 20);
-        defaults.put(BIBSONOMY_IGNORE_WARNING_MORE_POSTS, false);
+        defaults.put(BIBSONOMY_IGNORE_WARNING_MORE_POSTS, Boolean.FALSE);
+        defaults.put(BIBSONOMY_SIDEPANE_VISIBLE, Boolean.TRUE);
         defaults.put(BIBSONOMY_VISIBILITY, "public");
         defaults.put(BIBSONOMY_TAG_CLOUD_SIZE, 100);
         defaults.put(BIBSONOMY_SIDE_PANE_VISIBILITY_TYPE, GroupingEntity.ALL.toString());
@@ -2477,6 +2479,9 @@ public class JabRefPreferences implements PreferencesService {
         if (getBoolean(OO_SHOW_PANEL)) {
             visiblePanes.add(SidePaneType.OPEN_OFFICE);
         }
+        if (getBoolean(BIBSONOMY_SIDEPANE_VISIBLE)) {
+            visiblePanes.add(SidePaneType.BIBSONOMY);
+        }
         return visiblePanes;
     }
 
@@ -2484,6 +2489,7 @@ public class JabRefPreferences implements PreferencesService {
         putBoolean(WEB_SEARCH_VISIBLE, visiblePanes.contains(SidePaneType.WEB_SEARCH));
         putBoolean(GROUP_SIDEPANE_VISIBLE, visiblePanes.contains(SidePaneType.GROUPS));
         putBoolean(OO_SHOW_PANEL, visiblePanes.contains(SidePaneType.OPEN_OFFICE));
+        putBoolean(BIBSONOMY_SIDEPANE_VISIBLE, visiblePanes.contains(SidePaneType.BIBSONOMY));
     }
 
     private Map<SidePaneType, Integer> getSidePanePreferredPositions() {

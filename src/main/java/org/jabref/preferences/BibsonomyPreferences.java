@@ -16,38 +16,44 @@ public class BibsonomyPreferences {
     private final StringProperty apiUrl;
     private final StringProperty apiUsername;
     private final StringProperty apiKey;
-    private final StringProperty bibsonomyVisibilty;
-    private final StringProperty bibsonomySidepaneVisibilityName;
+    private final StringProperty bibsonomyVisibility;
+    private final StringProperty bibsonomySidePaneVisibilityName;
     private final BooleanProperty bibsonomyDocumentsImport;
     private final BooleanProperty bibsonomyDocumentsExport;
-    private final BooleanProperty bibsonomySaveapikey;
-    private final BooleanProperty bibsonomyTagsRefreshonstartup;
-    private final BooleanProperty bibsonomyRequestSizeIgnorewarning;
-    private final BooleanProperty bibsonomyTagsIgnorenotags;
-    private final IntegerProperty bibsonomyTagcloudSize;
+    private final BooleanProperty bibsonomySaveApiKey;
+    private final BooleanProperty bibsonomyTagsRefreshOnStartup;
+    private final BooleanProperty bibsonomyRequestSizeIgnoreWarning;
+    private final BooleanProperty bibsonomyTagsIgnoreNoTags;
+    private final IntegerProperty bibsonomyTagCloudSize;
     private final IntegerProperty bibsonomyRequestSize;
-    private final ObjectProperty<GroupingEntity> bibsonomySidepaneVisibilityType;
-    private final ObjectProperty<Order> bibsonomyTagcloudOrder;
+    private final ObjectProperty<GroupingEntity> bibsonomySidePaneVisibilityType;
+    private final ObjectProperty<Order> bibsonomyTagCloudOrder;
 
-    public BibsonomyPreferences(String apiUrl, String apiUsername, String apiKey, String bibsonomySidepaneVisibilityName, String bibsonomyVisibilty, GroupingEntity bibsonomySidepaneVisibilityType, Order bibsonomyTagcloudOrder, boolean bibsonomyDocumentsImport, boolean bibsonomyDocumentsExport, boolean bibsonomySaveapikey, boolean bibsonomyTagsRefreshonstartup, boolean bibsonomyRequestSizeIgnorewarning, boolean bibsonomyTagsIgnorenotags, int bibsonomyTagcloudSize, int bibsonomyRequestSize) {
+    public BibsonomyPreferences(String apiUrl, String apiUsername, String apiKey,
+                                String bibsonomySidePaneVisibilityName, String bibsonomyVisibility,
+                                GroupingEntity bibsonomySidePaneVisibilityType, Order bibsonomyTagCloudOrder,
+                                boolean bibsonomyDocumentsImport, boolean bibsonomyDocumentsExport,
+                                boolean bibsonomySaveApiKey, boolean bibsonomyTagsRefreshOnStartup,
+                                boolean bibsonomyRequestSizeIgnoreWarning, boolean bibsonomyTagsIgnoreNoTags,
+                                int bibsonomyTagCloudSize, int bibsonomyRequestSize) {
         this.apiUrl = new SimpleStringProperty(apiUrl);
         this.apiUsername = new SimpleStringProperty(apiUsername);
         this.apiKey = new SimpleStringProperty(apiKey);
 
-        this.bibsonomyVisibilty = new SimpleStringProperty(bibsonomyVisibilty);
-        this.bibsonomyTagcloudOrder = new SimpleObjectProperty<Order>(bibsonomyTagcloudOrder);
-        this.bibsonomySidepaneVisibilityType = new SimpleObjectProperty<GroupingEntity>(bibsonomySidepaneVisibilityType);
+        this.bibsonomyVisibility = new SimpleStringProperty(bibsonomyVisibility);
+        this.bibsonomyTagCloudOrder = new SimpleObjectProperty<Order>(bibsonomyTagCloudOrder);
+        this.bibsonomySidePaneVisibilityType = new SimpleObjectProperty<GroupingEntity>(bibsonomySidePaneVisibilityType);
 
         this.bibsonomyDocumentsImport = new SimpleBooleanProperty(bibsonomyDocumentsImport);
         this.bibsonomyDocumentsExport = new SimpleBooleanProperty(bibsonomyDocumentsExport);
-        this.bibsonomySaveapikey = new SimpleBooleanProperty(bibsonomySaveapikey);
-        this.bibsonomyTagsRefreshonstartup = new SimpleBooleanProperty(bibsonomyTagsRefreshonstartup);
-        this.bibsonomyRequestSizeIgnorewarning = new SimpleBooleanProperty(bibsonomyRequestSizeIgnorewarning);
-        this.bibsonomySidepaneVisibilityName = new SimpleStringProperty(bibsonomySidepaneVisibilityName);
-        this.bibsonomyTagsIgnorenotags = new SimpleBooleanProperty(bibsonomyTagsIgnorenotags);
+        this.bibsonomySaveApiKey = new SimpleBooleanProperty(bibsonomySaveApiKey);
+        this.bibsonomyTagsRefreshOnStartup = new SimpleBooleanProperty(bibsonomyTagsRefreshOnStartup);
+        this.bibsonomyRequestSizeIgnoreWarning = new SimpleBooleanProperty(bibsonomyRequestSizeIgnoreWarning);
+        this.bibsonomySidePaneVisibilityName = new SimpleStringProperty(bibsonomySidePaneVisibilityName);
+        this.bibsonomyTagsIgnoreNoTags = new SimpleBooleanProperty(bibsonomyTagsIgnoreNoTags);
 
         this.bibsonomyRequestSize = new SimpleIntegerProperty(bibsonomyRequestSize);
-        this.bibsonomyTagcloudSize = new SimpleIntegerProperty(bibsonomyTagcloudSize);
+        this.bibsonomyTagCloudSize = new SimpleIntegerProperty(bibsonomyTagCloudSize);
     }
 
     public String getApiUrl() {
@@ -86,28 +92,28 @@ public class BibsonomyPreferences {
         this.apiKey.set(apiKey);
     }
 
-    public String getBibsonomyVisibilty() {
-        return bibsonomyVisibilty.get();
+    public String getBibsonomyVisibility() {
+        return bibsonomyVisibility.get();
     }
 
-    public StringProperty bibsonomyVisibiltyProperty() {
-        return bibsonomyVisibilty;
+    public StringProperty bibsonomyVisibilityProperty() {
+        return bibsonomyVisibility;
     }
 
-    public void setBibsonomyVisibilty(String bibsonomyVisibilty) {
-        this.bibsonomyVisibilty.set(bibsonomyVisibilty);
+    public void setBibsonomyVisibility(String bibsonomyVisibility) {
+        this.bibsonomyVisibility.set(bibsonomyVisibility);
     }
 
-    public String getBibsonomySidepaneVisibilityName() {
-        return bibsonomySidepaneVisibilityName.get();
+    public String getBibsonomySidePaneVisibilityName() {
+        return bibsonomySidePaneVisibilityName.get();
     }
 
-    public StringProperty bibsonomySidepaneVisibilityNameProperty() {
-        return bibsonomySidepaneVisibilityName;
+    public StringProperty bibsonomySidePaneVisibilityNameProperty() {
+        return bibsonomySidePaneVisibilityName;
     }
 
-    public void setBibsonomySidepaneVisibilityName(String bibsonomySidepaneVisibilityName) {
-        this.bibsonomySidepaneVisibilityName.set(bibsonomySidepaneVisibilityName);
+    public void setBibsonomySidePaneVisibilityName(String bibsonomySidePaneVisibilityName) {
+        this.bibsonomySidePaneVisibilityName.set(bibsonomySidePaneVisibilityName);
     }
 
     public boolean isBibsonomyDocumentsImport() {
@@ -134,64 +140,64 @@ public class BibsonomyPreferences {
         this.bibsonomyDocumentsExport.set(bibsonomyDocumentsExport);
     }
 
-    public boolean isBibsonomySaveapikey() {
-        return bibsonomySaveapikey.get();
+    public boolean isBibsonomySaveApiKey() {
+        return bibsonomySaveApiKey.get();
     }
 
-    public BooleanProperty bibsonomySaveapikeyProperty() {
-        return bibsonomySaveapikey;
+    public BooleanProperty bibsonomySaveApiKeyProperty() {
+        return bibsonomySaveApiKey;
     }
 
-    public void setBibsonomySaveapikey(boolean bibsonomySaveapikey) {
-        this.bibsonomySaveapikey.set(bibsonomySaveapikey);
+    public void setBibsonomySaveApiKey(boolean bibsonomySaveApiKey) {
+        this.bibsonomySaveApiKey.set(bibsonomySaveApiKey);
     }
 
-    public boolean isBibsonomyTagsRefreshonstartup() {
-        return bibsonomyTagsRefreshonstartup.get();
+    public boolean isBibsonomyTagsRefreshOnStartup() {
+        return bibsonomyTagsRefreshOnStartup.get();
     }
 
-    public BooleanProperty bibsonomyTagsRefreshonstartupProperty() {
-        return bibsonomyTagsRefreshonstartup;
+    public BooleanProperty bibsonomyTagsRefreshOnStartupProperty() {
+        return bibsonomyTagsRefreshOnStartup;
     }
 
-    public void setBibsonomyTagsRefreshonstartup(boolean bibsonomyTagsRefreshonstartup) {
-        this.bibsonomyTagsRefreshonstartup.set(bibsonomyTagsRefreshonstartup);
+    public void setBibsonomyTagsRefreshOnStartup(boolean bibsonomyTagsRefreshOnStartup) {
+        this.bibsonomyTagsRefreshOnStartup.set(bibsonomyTagsRefreshOnStartup);
     }
 
-    public boolean isBibsonomyRequestSizeIgnorewarning() {
-        return bibsonomyRequestSizeIgnorewarning.get();
+    public boolean isBibsonomyRequestSizeIgnoreWarning() {
+        return bibsonomyRequestSizeIgnoreWarning.get();
     }
 
-    public BooleanProperty bibsonomyRequestSizeIgnorewarningProperty() {
-        return bibsonomyRequestSizeIgnorewarning;
+    public BooleanProperty bibsonomyRequestSizeIgnoreWarningProperty() {
+        return bibsonomyRequestSizeIgnoreWarning;
     }
 
-    public void setBibsonomyRequestSizeIgnorewarning(boolean bibsonomyRequestSizeIgnorewarning) {
-        this.bibsonomyRequestSizeIgnorewarning.set(bibsonomyRequestSizeIgnorewarning);
+    public void setBibsonomyRequestSizeIgnoreWarning(boolean bibsonomyRequestSizeIgnoreWarning) {
+        this.bibsonomyRequestSizeIgnoreWarning.set(bibsonomyRequestSizeIgnoreWarning);
     }
 
-    public boolean isBibsonomyTagsIgnorenotags() {
-        return bibsonomyTagsIgnorenotags.get();
+    public boolean isBibsonomyTagsIgnoreNoTags() {
+        return bibsonomyTagsIgnoreNoTags.get();
     }
 
-    public BooleanProperty bibsonomyTagsIgnorenotagsProperty() {
-        return bibsonomyTagsIgnorenotags;
+    public BooleanProperty bibsonomyTagsIgnoreNoTagsProperty() {
+        return bibsonomyTagsIgnoreNoTags;
     }
 
-    public void setBibsonomyTagsIgnorenotags(boolean bibsonomyTagsIgnorenotags) {
-        this.bibsonomyTagsIgnorenotags.set(bibsonomyTagsIgnorenotags);
+    public void setBibsonomyTagsIgnoreNoTags(boolean bibsonomyTagsIgnoreNoTags) {
+        this.bibsonomyTagsIgnoreNoTags.set(bibsonomyTagsIgnoreNoTags);
     }
 
-    public int getBibsonomyTagcloudSize() {
-        return bibsonomyTagcloudSize.get();
+    public int getBibsonomyTagCloudSize() {
+        return bibsonomyTagCloudSize.get();
     }
 
-    public IntegerProperty bibsonomyTagcloudSizeProperty() {
-        return bibsonomyTagcloudSize;
+    public IntegerProperty bibsonomyTagCloudSizeProperty() {
+        return bibsonomyTagCloudSize;
     }
 
-    public void setBibsonomyTagcloudSize(int bibsonomyTagcloudSize) {
-        this.bibsonomyTagcloudSize.set(bibsonomyTagcloudSize);
+    public void setBibsonomyTagCloudSize(int bibsonomyTagCloudSize) {
+        this.bibsonomyTagCloudSize.set(bibsonomyTagCloudSize);
     }
 
     public int getBibsonomyRequestSize() {
@@ -206,27 +212,27 @@ public class BibsonomyPreferences {
         this.bibsonomyRequestSize.set(bibsonomyRequestSize);
     }
 
-    public GroupingEntity getBibsonomySidepaneVisibilityType() {
-        return bibsonomySidepaneVisibilityType.get();
+    public GroupingEntity getBibsonomySidePaneVisibilityType() {
+        return bibsonomySidePaneVisibilityType.get();
     }
 
-    public ObjectProperty<GroupingEntity> bibsonomySidepaneVisibilityTypeProperty() {
-        return bibsonomySidepaneVisibilityType;
+    public ObjectProperty<GroupingEntity> bibsonomySidePaneVisibilityTypeProperty() {
+        return bibsonomySidePaneVisibilityType;
     }
 
-    public void setBibsonomySidepaneVisibilityType(GroupingEntity bibsonomySidepaneVisibilityType) {
-        this.bibsonomySidepaneVisibilityType.set(bibsonomySidepaneVisibilityType);
+    public void setBibsonomySidePaneVisibilityType(GroupingEntity bibsonomySidePaneVisibilityType) {
+        this.bibsonomySidePaneVisibilityType.set(bibsonomySidePaneVisibilityType);
     }
 
-    public Order getBibsonomyTagcloudOrder() {
-        return bibsonomyTagcloudOrder.get();
+    public Order getBibsonomyTagCloudOrder() {
+        return bibsonomyTagCloudOrder.get();
     }
 
-    public ObjectProperty<Order> bibsonomyTagcloudOrderProperty() {
-        return bibsonomyTagcloudOrder;
+    public ObjectProperty<Order> bibsonomyTagCloudOrderProperty() {
+        return bibsonomyTagCloudOrder;
     }
 
-    public void setBibsonomyTagcloudOrder(Order bibsonomyTagcloudOrder) {
-        this.bibsonomyTagcloudOrder.set(bibsonomyTagcloudOrder);
+    public void setBibsonomyTagCloudOrder(Order bibsonomyTagCloudOrder) {
+        this.bibsonomyTagCloudOrder.set(bibsonomyTagCloudOrder);
     }
 }

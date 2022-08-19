@@ -3,12 +3,11 @@ package org.bibsonomy.plugin.jabref.action;
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.bibsonomy.plugin.jabref.util.WorkerUtil;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.model.util.bibsonomy.WorkerUtil;
 
-import net.sf.jabref.AbstractWorker;
-import net.sf.jabref.JabRefFrame;
+import com.microsoft.applicationinsights.core.dependencies.apachecommons.logging.Log;
+import com.microsoft.applicationinsights.core.dependencies.apachecommons.logging.LogFactory;
 
 /**
  * {@link AbstractPluginAction} is the base class for all actions.
