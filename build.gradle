@@ -145,7 +145,7 @@ dependencies {
     implementation 'com.github.javakeyring:java-keyring:1.0.2'
 
     antlr4 'org.antlr:antlr4:4.13.0'
-    implementation 'org.antlr:antlr4-runtime:4.13.0'
+    implementation 'org.antlr:antlr4-runtime:4.13.1'
 
     implementation group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '6.6.0.202305301015-r'
 
