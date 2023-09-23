@@ -5,7 +5,6 @@ import java.util.Optional;
 
 import javafx.collections.FXCollections;
 
-import org.jabref.logic.bibtex.FieldContentFormatterPreferences;
 import org.jabref.logic.importer.ImportFormatPreferences;
 import org.jabref.logic.importer.ImporterPreferences;
 import org.jabref.logic.importer.PagedSearchBasedFetcher;
@@ -17,6 +16,7 @@ import org.jabref.testutils.category.FetcherTest;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -37,11 +37,10 @@ public class AstrophysicsDataSystemTest implements PagedSearchFetcherTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        ImportFormatPreferences importFormatPreferences = mock(ImportFormatPreferences.class);
+        ImportFormatPreferences importFormatPreferences = mock(ImportFormatPreferences.class, Answers.RETURNS_DEEP_STUBS);
         ImporterPreferences importerPreferences = mock(ImporterPreferences.class);
         when(importerPreferences.getApiKeys()).thenReturn(FXCollections.emptyObservableSet());
-        when(importFormatPreferences.getFieldContentFormatterPreferences()).thenReturn(
-                mock(FieldContentFormatterPreferences.class));
+
         fetcher = new AstrophysicsDataSystem(importFormatPreferences, importerPreferences);
 
         diezSliceTheoremEntry = new BibEntry(StandardEntryType.Article)
@@ -50,6 +49,7 @@ public class AstrophysicsDataSystemTest implements PagedSearchFetcherTest {
                 .withField(StandardField.TITLE, "Slice theorem and orbit type stratification in infinite dimensions")
                 .withField(StandardField.YEAR, "2018")
                 .withField(StandardField.ARCHIVEPREFIX, "arXiv")
+                .withField(StandardField.DOI, "10.48550/arXiv.1812.04698")
                 .withField(StandardField.EPRINT, "1812.04698")
                 .withField(StandardField.JOURNAL, "arXiv e-prints")
                 .withField(StandardField.KEYWORDS, "Mathematics - Differential Geometry, Mathematical Physics, 58B25, (58D19, 58B20, 22E99, 58A35)")
@@ -111,7 +111,7 @@ public class AstrophysicsDataSystemTest implements PagedSearchFetcherTest {
                 .withField(StandardField.AUTHOR, "Ingersoll, A.~P. and Pollard, D.")
                 .withField(StandardField.DOI, "10.1016/0019-1035(82)90169-5")
                 .withField(StandardField.JOURNAL, "\\icarus")
-                .withField(StandardField.KEYWORDS, "Atmospheric Circulation, Barotropic Flow, Convective Flow, Flow Stability, Jupiter Atmosphere, Rotating Fluids, Saturn Atmosphere, Adiabatic Flow, Anelasticity, Compressible Fluids, Planetary Rotation, Rotating Cylinders, Scaling Laws, Wind Profiles, PLANETS, JUPITER, SATURN, MOTION, INTERIORS, ATMOSPHERE, ANALYSIS, SCALE, BAROTROPY, CHARACTERISTICS, STRUCTURE, WINDS, VISCOSITY, DATA, CONVECTION, ROTATION, EDDY EFFECTS, ENERGY, ADIABATICITY, DIAGRAMS, REVIEW, LATITUDE, ZONES, VELOCITY, MATHEMATICAL MODELS, HEAT FLOW, EQUATIONS OF MOTION, FLUIDS, DYNAMICS, TEMPERATURE, GRADIENTS, Lunar and Planetary Exploration; Planets")
+                .withField(StandardField.KEYWORDS, "Atmospheric Circulation, Barotropic Flow, Convective Flow, Flow Stability, Jupiter Atmosphere, Rotating Fluids, Saturn Atmosphere, Adiabatic Flow, Anelasticity, Compressible Fluids, Planetary Rotation, Rotating Cylinders, Scaling Laws, Wind Profiles, PLANETS, JUPITER, SATURN, MOTION, INTERIORS, ATMOSPHERE, ANALYSIS, SCALE, BAROTROPY, CHARACTERISTICS, STRUCTURE, WINDS, VISCOSITY, DATA, CONVECTION, ROTATION, EDDY EFFECTS, ENERGY, ADIABATICITY, DIAGRAMS, REVIEW, LATITUDE, ZONES, VELOCITY, MATHEMATICAL MODELS, HEAT FLOW, EQUATIONS OF MOTION, FLUIDS, DYNAMICS, TEMPERATURE, GRADIENTS, Lunar and Planetary Exploration; Planets, Earth Science, Earth Science")
                 .withField(StandardField.MONTH, "#oct#")
                 .withField(StandardField.NUMBER, "1")
                 .withField(StandardField.PAGES, "62-80")

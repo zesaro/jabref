@@ -25,21 +25,27 @@ import org.jabref.model.entry.field.UnknownField;
 import org.jabref.model.entry.types.EntryType;
 import org.jabref.model.entry.types.StandardEntryType;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
+ * <p>
  * Importer for the ISI Web of Science, INSPEC and Medline format.
+ * </p>
  * <p>
  * Documentation about ISI WOS format:
- * <p>
  * <ul>
+ *
  * <li>https://web.archive.org/web/20131031052339/http://wos.isitrial.com/help/helpprn.html</li>
  * </ul>
  * <p>
  * <ul>
  * <li>Deal with capitalization correctly</li>
  * </ul>
+ * </p>
  */
 public class IsiImporter extends Importer {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(IsiImporter.class);
     private static final Pattern SUB_SUP_PATTERN = Pattern.compile("/(sub|sup)\\s+(.*?)\\s*/");
 
     // 2006.09.05: Modified pattern to avoid false positives for other files due to an
@@ -344,8 +350,9 @@ public class IsiImporter extends Importer {
                 if (month.isPresent()) {
                     return month.get().getJabRefFormat();
                 }
-            } catch (NumberFormatException ignored) {
-                // Ignored
+            } catch (NumberFormatException e) {
+                LOGGER.info("The import file in ISI format cannot parse part of the content in PD into integers " +
+                        "(If there is no month or PD displayed in the imported entity, this may be the reason)", e);
             }
         }
         return null;

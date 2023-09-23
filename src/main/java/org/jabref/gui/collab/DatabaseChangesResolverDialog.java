@@ -16,9 +16,12 @@ import javafx.scene.layout.BorderPane;
 
 import org.jabref.gui.DialogService;
 import org.jabref.gui.StateManager;
+import org.jabref.gui.preview.PreviewViewer;
 import org.jabref.gui.theme.ThemeManager;
 import org.jabref.gui.util.BaseDialog;
+import org.jabref.gui.util.TaskExecutor;
 import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntryTypesManager;
 import org.jabref.preferences.PreferencesService;
 
 import com.airhacks.afterburner.views.ViewLoader;
@@ -46,16 +49,28 @@ public class DatabaseChangesResolverDialog extends BaseDialog<Boolean> {
     private BorderPane changeInfoPane;
 
     private final List<DatabaseChange> changes;
+    private final BibDatabaseContext database;
 
     private ExternalChangesResolverViewModel viewModel;
 
-    private final DatabaseChangeDetailsViewFactory databaseChangeDetailsViewFactory;
-
     @Inject private UndoManager undoManager;
+    @Inject private StateManager stateManager;
+    @Inject private DialogService dialogService;
+    @Inject private PreferencesService preferencesService;
+    @Inject private ThemeManager themeManager;
+    @Inject private BibEntryTypesManager entryTypesManager;
+    @Inject private TaskExecutor taskExecutor;
 
-    public DatabaseChangesResolverDialog(List<DatabaseChange> changes, BibDatabaseContext database, DialogService dialogService, StateManager stateManager, ThemeManager themeManager, PreferencesService preferencesService, String dialogTitle) {
+    /**
+     * A dialog going through given <code>changes</code>, which are diffs to the provided <code>database</code>.
+     * Each accepted change is written to the provided <code>database</code>.
+     *
+     * @param changes The list of changes
+     * @param database The database to apply the changes to
+     */
+    public DatabaseChangesResolverDialog(List<DatabaseChange> changes, BibDatabaseContext database, String dialogTitle) {
         this.changes = changes;
-        this.databaseChangeDetailsViewFactory = new DatabaseChangeDetailsViewFactory(database, dialogService, stateManager, themeManager, preferencesService);
+        this.database = database;
 
         this.setTitle(dialogTitle);
         ViewLoader.view(this)
@@ -75,6 +90,9 @@ public class DatabaseChangesResolverDialog extends BaseDialog<Boolean> {
 
     @FXML
     private void initialize() {
+        PreviewViewer previewViewer = new PreviewViewer(database, dialogService, preferencesService, stateManager, themeManager, taskExecutor);
+        DatabaseChangeDetailsViewFactory databaseChangeDetailsViewFactory = new DatabaseChangeDetailsViewFactory(database, dialogService, stateManager, themeManager, preferencesService, entryTypesManager, previewViewer, taskExecutor);
+
         viewModel = new ExternalChangesResolverViewModel(changes, undoManager);
 
         changeName.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getName()));

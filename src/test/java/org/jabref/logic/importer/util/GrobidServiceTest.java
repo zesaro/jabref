@@ -30,32 +30,30 @@ import static org.mockito.Mockito.when;
 public class GrobidServiceTest {
 
     private static GrobidService grobidService;
-    private static GrobidPreferences grobidPreferences = new GrobidPreferences(
-            true,
-            false,
-            "http://grobid.jabref.org:8070");
     private static ImportFormatPreferences importFormatPreferences;
 
     @BeforeAll
     public static void setup() {
-        grobidService = new GrobidService(grobidPreferences);
         importFormatPreferences = mock(ImportFormatPreferences.class, Answers.RETURNS_DEEP_STUBS);
-        when(importFormatPreferences.getKeywordSeparator()).thenReturn(',');
+        when(importFormatPreferences.bibEntryPreferences().getKeywordSeparator()).thenReturn(',');
+
+        GrobidPreferences grobidPreferences = new GrobidPreferences(
+                true,
+                false,
+                "http://grobid.jabref.org:8070");
+        grobidService = new GrobidService(grobidPreferences);
     }
 
     @Test
     public void processValidCitationTest() throws IOException, ParseException {
         BibEntry exampleBibEntry = new BibEntry(StandardEntryType.Article).withCitationKey("-1")
-                                                                                    .withField(StandardField.AUTHOR, "Derwing, Tracey and Rossiter, Marian and Munro, Murray")
-                                                                                    .withField(StandardField.TITLE, "Teaching Native Speakers to Listen to Foreign-accented Speech")
+                                                                                    .withField(StandardField.AUTHOR, "Derwing, T and Rossiter, M and Munro, M")
+                                                                                    .withField(StandardField.TITLE, "Teaching native speakers to listen to foreign-accented speech")
                                                                                     .withField(StandardField.JOURNAL, "Journal of Multilingual and Multicultural Development")
-                                                                                    .withField(StandardField.DOI, "10.1080/01434630208666468")
-                                                                                    .withField(StandardField.DATE, "2002-09")
+                                                                                    .withField(StandardField.DATE, "2002")
                                                                                     .withField(StandardField.YEAR, "2002")
-                                                                                    .withField(StandardField.MONTH, "9")
-                                                                                    .withField(StandardField.PAGES, "245-259")
+                                                                                    .withField(StandardField.PAGES, "245--259")
                                                                                     .withField(StandardField.VOLUME, "23")
-                                                                                    .withField(StandardField.PUBLISHER, "Informa UK Limited")
                                                                                     .withField(StandardField.NUMBER, "4");
         Optional<BibEntry> response = grobidService.processCitation("Derwing, T. M., Rossiter, M. J., & Munro, " +
                 "M. J. (2002). Teaching native speakers to listen to foreign-accented speech. " +

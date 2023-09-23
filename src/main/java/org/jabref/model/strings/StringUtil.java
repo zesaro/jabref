@@ -51,9 +51,9 @@ public class StringUtil {
         for (int i = 0; i < toQuote.length(); ++i) {
             c = toQuote.charAt(i);
 
-            isSpecial = (c == quoteChar);
+            isSpecial = c == quoteChar;
             // If non-null specials performs logic-or with specials.indexOf(c) >= 0
-            isSpecial |= ((specials != null) && (specials.indexOf(c) >= 0));
+            isSpecial |= (specials != null) && (specials.indexOf(c) >= 0);
 
             if (isSpecial) {
                 result.append(quoteChar);
@@ -65,11 +65,6 @@ public class StringUtil {
 
     /**
      * Creates a substring from a text
-     *
-     * @param text
-     * @param startIndex
-     * @param terminateOnEndBraceOnly
-     * @return
      */
     public static String getPart(String text, int startIndex, boolean terminateOnEndBraceOnly) {
         char c;
@@ -104,11 +99,7 @@ public class StringUtil {
     /**
      * Returns the string, after shaving off whitespace at the beginning and end,
      * and removing (at most) one pair of braces or " surrounding it.
-     *
-     * @param toShave
-     * @return
      */
-
     public static String shaveString(String toShave) {
         if ((toShave == null) || (toShave.isEmpty())) {
             return "";
@@ -129,11 +120,7 @@ public class StringUtil {
      * String[] s = "ab/cd/ed".split("/"); join(s, "\\", 0, s.length) ->
      * "ab\\cd\\ed"
      *
-     * @param strings
-     * @param separator
-     * @param from
      * @param to        Excluding strings[to]
-     * @return
      */
     public static String join(String[] strings, String separator, int from, int to) {
         if ((strings.length == 0) || (from >= to)) {
@@ -152,9 +139,6 @@ public class StringUtil {
 
     /**
      * Removes optional square brackets from the string s
-     *
-     * @param toStrip
-     * @return
      */
     public static String stripBrackets(String toStrip) {
         if (isInSquareBrackets(toStrip)) {
@@ -621,7 +605,7 @@ public class StringUtil {
     }
 
     public static boolean isNullOrEmpty(String toTest) {
-        return ((toTest == null) || toTest.isEmpty());
+        return (toTest == null) || toTest.isEmpty();
     }
 
     public static boolean isBlank(String string) {
@@ -777,4 +761,13 @@ public class StringUtil {
         return s == null || "".equals(s) || "".equals(s.trim());
     }
 
+    @ApacheCommonsLang3Allowed("No Guava equivalent existing - see https://stackoverflow.com/a/23825984")
+    public static String removeStringAtTheEnd(String string, String stringToBeRemoved) {
+        return StringUtils.removeEndIgnoreCase(string, stringToBeRemoved);
+    }
+
+    @ApacheCommonsLang3Allowed("No Guava equivalent existing")
+    public static boolean endsWithIgnoreCase(String string, String suffix) {
+        return StringUtils.endsWithIgnoreCase(string, suffix);
+    }
 }
