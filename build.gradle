@@ -48,7 +48,9 @@ java {
     modularity.inferModulePath.set(false)
 
     toolchain {
-        // If this is updated, also update .devcontainer/devcontainer.json#L34
+        // If this is updated, also update
+        // - .devcontainer/devcontainer.json#L34 and
+        // - .gitpod.Dockerfile
         languageVersion = JavaLanguageVersion.of(21)
     }
 }
@@ -256,7 +258,7 @@ dependencies {
     xjc group: 'org.glassfish.jaxb', name: 'jaxb-xjc', version: '3.0.2'
     xjc group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: '3.0.2'
 
-    rewrite(platform("org.openrewrite.recipe:rewrite-recipe-bom:2.4.0"))
+    rewrite(platform("org.openrewrite.recipe:rewrite-recipe-bom:latest.integration"))
     rewrite("org.openrewrite.recipe:rewrite-static-analysis")
     rewrite("org.openrewrite.recipe:rewrite-logging-frameworks")
     rewrite("org.openrewrite.recipe:rewrite-testing-frameworks")
