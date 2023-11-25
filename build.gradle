@@ -27,7 +27,7 @@ plugins {
 
     id 'idea'
 
-    id 'org.openrewrite.rewrite' version '6.4.0'
+    id 'org.openrewrite.rewrite' version '6.5.4'
 }
 
 // Enable following for debugging
@@ -186,7 +186,7 @@ dependencies {
     }
 
     implementation 'org.controlsfx:controlsfx:11.2.0'
-    implementation 'com.github.Dansoftowner:jSystemThemeDetector:3.6'
+    implementation 'com.github.Dansoftowner:jSystemThemeDetector:3.8'
 
     implementation 'org.jsoup:jsoup:1.16.2'
     implementation 'com.konghq:unirest-java:3.14.5'
@@ -259,7 +259,7 @@ dependencies {
     xjc group: 'org.glassfish.jaxb', name: 'jaxb-xjc', version: '3.0.2'
     xjc group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: '3.0.2'
 
-    rewrite(platform("org.openrewrite.recipe:rewrite-recipe-bom:2.4.1"))
+    rewrite(platform("org.openrewrite.recipe:rewrite-recipe-bom:2.5.0"))
     rewrite("org.openrewrite.recipe:rewrite-static-analysis")
     rewrite("org.openrewrite.recipe:rewrite-logging-frameworks")
     rewrite("org.openrewrite.recipe:rewrite-testing-frameworks")
@@ -283,7 +283,8 @@ processResources {
                 "astrophysicsDataSystemAPIKey": System.getenv('AstrophysicsDataSystemAPIKey') ? System.getenv('AstrophysicsDataSystemAPIKey') : '',
                 "ieeeAPIKey": System.getenv('IEEEAPIKey') ? System.getenv('IEEEAPIKey') : '',
                 "scienceDirectApiKey": System.getenv('SCIENCEDIRECTAPIKEY') ? System.getenv('SCIENCEDIRECTAPIKEY') : '',
-                "biodiversityHeritageApiKey": System.getenv('BiodiversityHeritageApiKey') ? System.getenv('BiodiversityHeritageApiKey') : ''
+                "biodiversityHeritageApiKey": System.getenv('BiodiversityHeritageApiKey') ? System.getenv('BiodiversityHeritageApiKey') : '',
+                "semanticScholarApiKey": System.getenv('SemanticScholarApiKey') ? System.getenv("SemanticScholarApiKey") : ''
         )
         filteringCharset = 'UTF-8'
     }
