@@ -56,6 +56,13 @@ open module org.jabref {
 
     // Annotations (@PostConstruct)
     requires jakarta.annotation;
+
+    // BibSonomy
+    requires bibsonomy.common;
+    requires bibsonomy.model;
+    requires bibsonomy.rest.client;
+    requires bibsonomy.rest.common;
+
     requires jakarta.inject;
 
     // http server and client exchange
