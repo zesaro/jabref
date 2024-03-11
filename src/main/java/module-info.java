@@ -115,6 +115,7 @@ open module org.jabref {
     requires com.ibm.icu;
 
     requires flexmark;
+    requires flexmark.html2md.converter;
     requires flexmark.util.ast;
     requires flexmark.util.data;
 
