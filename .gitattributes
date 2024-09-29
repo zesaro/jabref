@@ -1,12 +1,14 @@
 # unix  line endings at unix files
-gradlew eol=lf
-*.sh eol=lf
+gradlew text eol=lf
+*.sh text eol=lf
 
-# ensure that line endings of *.java and *.properties are normalized
-*.properties text
-*.java text
+# windows line endings at windows files
+*.bat text eol=crlf
 
-# disalbe after a release
-# CHANGELOG.md merge=union
+# ensure that line endings of *.bib, *.fxml, *.java, *.properties are normalized to LF
+*.bib text eol=lf
+*.fxml text eol=lf
+*.java text eol=lf
+*.properties text eol=lf
 
-src/main/resources/l10n/*.properties merge=union
+CHANGELOG.md merge=union
