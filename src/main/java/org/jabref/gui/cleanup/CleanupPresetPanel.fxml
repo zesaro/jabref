@@ -3,18 +3,16 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.VBox?>
 <?import org.jabref.gui.commonfxcontrols.FieldFormatterCleanupsPanel?>
-<?import javafx.scene.control.ToggleGroup?>
-<?import javafx.scene.control.RadioButton?>
-
 <fx:root xmlns:fx="http://javafx.com/fxml/1" spacing="10.0" type="VBox" xmlns="http://javafx.com/javafx/8.0.121"
          fx:controller="org.jabref.gui.cleanup.CleanupPresetPanel">
     <fx:define>
         <ToggleGroup fx:id="timestampCleanup"/>
       </fx:define>
 
-      <Label text="Miscellanous" />
+      <Label text="%Miscellaneous" />
       <VBox>
          <VBox.margin>
             <Insets left="20.0" />
@@ -29,7 +27,7 @@
          <CheckBox fx:id="cleanUpTimestampToModificationDate" text="%Convert timestamp field to field 'modificationdate'" />
       </VBox>
 
-      <Label text="File Related" />
+      <Label text="%File-related" />
       <VBox>
          <VBox.margin>
             <Insets left="20.0" />
@@ -51,5 +49,5 @@
  <padding>
     <Insets bottom="10.0" left="15.0" right="10.0" top="10.0" />
  </padding>
-  
+
 </fx:root>

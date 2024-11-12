@@ -5,6 +5,7 @@ import java.util.Comparator;
 import javax.swing.undo.UndoManager;
 
 import javafx.beans.binding.Bindings;
+import javafx.css.PseudoClass;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -21,14 +22,13 @@ import org.jabref.gui.actions.SimpleCommand;
 import org.jabref.gui.actions.StandardActions;
 import org.jabref.gui.autocompleter.SuggestionProvider;
 import org.jabref.gui.icon.IconTheme;
-import org.jabref.gui.keyboard.KeyBindingRepository;
 import org.jabref.gui.util.ViewModelListCellFactory;
 import org.jabref.logic.integrity.FieldCheckers;
 import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.preferences.CliPreferences;
 import org.jabref.model.entry.BibEntry;
 import org.jabref.model.entry.Keyword;
 import org.jabref.model.entry.field.Field;
-import org.jabref.preferences.PreferencesService;
 
 import com.airhacks.afterburner.views.ViewLoader;
 import com.dlsc.gemsfx.TagsField;
@@ -38,16 +38,15 @@ import org.slf4j.LoggerFactory;
 
 public class KeywordsEditor extends HBox implements FieldEditorFX {
     private static final Logger LOGGER = LoggerFactory.getLogger(KeywordsEditor.class);
+    private static final PseudoClass FOCUSED = PseudoClass.getPseudoClass("focused");
 
+    @FXML private KeywordsEditorViewModel viewModel;
     @FXML private TagsField<Keyword> keywordTagsField;
 
-    @Inject private PreferencesService preferencesService;
+    @Inject private CliPreferences preferences;
     @Inject private DialogService dialogService;
     @Inject private UndoManager undoManager;
     @Inject private ClipBoardManager clipBoardManager;
-    @Inject private KeyBindingRepository keyBindingRepository;
-
-    private final KeywordsEditorViewModel viewModel;
 
     public KeywordsEditor(Field field,
                           SuggestionProvider<?> suggestionProvider,
@@ -61,7 +60,7 @@ public class KeywordsEditor extends HBox implements FieldEditorFX {
                 field,
                 suggestionProvider,
                 fieldCheckers,
-                preferencesService,
+                preferences,
                 undoManager);
 
         keywordTagsField.setCellFactory(new ViewModelListCellFactory<Keyword>().withText(Keyword::get));
@@ -75,8 +74,18 @@ public class KeywordsEditor extends HBox implements FieldEditorFX {
         keywordTagsField.setNewItemProducer(searchText -> viewModel.getStringConverter().fromString(searchText));
 
         keywordTagsField.setShowSearchIcon(false);
+        keywordTagsField.setOnMouseClicked(event -> keywordTagsField.getEditor().requestFocus());
         keywordTagsField.getEditor().getStyleClass().clear();
         keywordTagsField.getEditor().getStyleClass().add("tags-field-editor");
+        keywordTagsField.getEditor().focusedProperty().addListener((observable, oldValue, newValue) -> keywordTagsField.pseudoClassStateChanged(FOCUSED, newValue));
+
+        String keywordSeparator = String.valueOf(viewModel.getKeywordSeparator());
+        keywordTagsField.getEditor().setOnKeyReleased(event -> {
+            if (event.getText().equals(keywordSeparator)) {
+                keywordTagsField.commit();
+                event.consume();
+            }
+        });
 
         Bindings.bindContentBidirectional(keywordTagsField.getTags(), viewModel.keywordListProperty());
     }
@@ -88,7 +97,7 @@ public class KeywordsEditor extends HBox implements FieldEditorFX {
         tagLabel.getGraphic().setOnMouseClicked(event -> keywordTagsField.removeTags(keyword));
         tagLabel.setContentDisplay(ContentDisplay.RIGHT);
         ContextMenu contextMenu = new ContextMenu();
-        ActionFactory factory = new ActionFactory(keyBindingRepository);
+        ActionFactory factory = new ActionFactory();
         contextMenu.getItems().addAll(
                 factory.createMenuItem(StandardActions.COPY, new KeywordsEditor.TagContextAction(StandardActions.COPY, keyword)),
                 factory.createMenuItem(StandardActions.CUT, new KeywordsEditor.TagContextAction(StandardActions.CUT, keyword)),
@@ -110,11 +119,6 @@ public class KeywordsEditor extends HBox implements FieldEditorFX {
     @Override
     public Parent getNode() {
         return this;
-    }
-
-    @Override
-    public void requestFocus() {
-        keywordTagsField.requestFocus();
     }
 
     @Override

@@ -66,7 +66,6 @@ class CitationKeyGeneratorTest {
     private static final String AUTHNOFMTH = "[auth%d_%d]";
     private static final String AUTHFOREINI = "[authForeIni]";
     private static final String AUTHFIRSTFULL = "[authFirstFull]";
-    private static final String AUTHORS = "[authors]";
     private static final String AUTHORSALPHA = "[authorsAlpha]";
     private static final String AUTHORLAST = "[authorLast]";
     private static final String AUTHORLASTFOREINI = "[authorLastForeIni]";
@@ -92,7 +91,7 @@ class CitationKeyGeneratorTest {
     }
 
     static String generateKey(BibEntry entry, String pattern, BibDatabase database) {
-        GlobalCitationKeyPattern keyPattern = GlobalCitationKeyPattern.fromPattern(pattern);
+        GlobalCitationKeyPatterns keyPattern = GlobalCitationKeyPatterns.fromPattern(pattern);
         CitationKeyPatternPreferences patternPreferences = new CitationKeyPatternPreferences(
                 false,
                 false,
@@ -192,14 +191,15 @@ class CitationKeyGeneratorTest {
             "@ARTICLE{kohn, author={Andreas Ùöning}, year={2000}}", "Uoe",
 
             # Special cases
-            "@ARTICLE{kohn, author={Oraib Al-Ketan}, year={2000}}", "AlK",
+            # We keep "-" in citation keys, thus Al-Ketan with three letters is "Al-"
+            "@ARTICLE{kohn, author={Oraib Al-Ketan}, year={2000}}", "Al-",
             "@ARTICLE{kohn, author={Andrés D'Alessandro}, year={2000}}", "DAl",
             "@ARTICLE{kohn, author={Andrés Aʹrnold}, year={2000}}", "Arn"
             """
     )
     void makeLabelAndCheckLegalKeys(String bibtexString, String expectedResult) throws ParseException {
-        Optional<BibEntry> bibEntry = BibtexParser.singleFromString(bibtexString, importFormatPreferences);
-        String citationKey = generateKey(bibEntry.orElse(null), "[auth3]", new BibDatabase());
+        BibEntry bibEntry = BibtexParser.singleFromString(bibtexString, importFormatPreferences).get();
+        String citationKey = generateKey(bibEntry, "[auth3]", new BibDatabase());
 
         String cleanedKey = CitationKeyGenerator.cleanKey(citationKey, DEFAULT_UNWANTED_CHARACTERS);
 
@@ -388,7 +388,7 @@ class CitationKeyGeneratorTest {
         assertEquals("NeMa", generateKey(AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_2, "[authIni4]"));
         assertEquals("NeME", generateKey(AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_3, "[authIni4]"));
         assertEquals("NMEB", generateKey(AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_4, "[authIni4]"));
-        assertEquals("NME+", generateKey(AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_5, "[authIni4]"));
+        assertEquals("NMEB", generateKey(AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_5, "[authIni4]"));
 
         assertEquals("N", generateKey(AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_1, "[authIni1]"));
         assertEquals("", generateKey(AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_1, "[authIni0]"));
@@ -493,26 +493,31 @@ class CitationKeyGeneratorTest {
         assertEquals("Newton", generateKey(AUTHOR_FIRSTNAME_FULL_LASTNAME_FULL_COUNT_2, AUTHFIRSTFULL));
     }
 
-    /**
-     * Tests [authors]
-     */
-    @Test
-    void allAuthors() {
-        assertEquals("Newton", generateKey(AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_1, AUTHORS));
-        assertEquals("NewtonMaxwell", generateKey(AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_2, AUTHORS));
-        assertEquals("NewtonMaxwellEinstein", generateKey(AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_3, AUTHORS));
+    @ParameterizedTest
+    @MethodSource
+    void authors(String expectedKey, BibEntry entry, String pattern) {
+        assertEquals(expectedKey, generateKey(entry, pattern));
+    }
+
+    static Stream<Arguments> authors() {
+        return Stream.of(
+                Arguments.of("Newton", AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_1, "[authors]"),
+                Arguments.of("NewtonMaxwell", AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_2, "[authors]"),
+                Arguments.of("NewtonMaxwellEinstein", AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_3, "[authors]"),
+                Arguments.of("Newton-Maxwell-Einstein", AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_3, "[authors:regex(\"(.)([A-Z])\",\"$1-$2\")]")
+        );
     }
 
     static Stream<Arguments> authorsAlpha() {
         return Stream.of(
-                Arguments.of("New", AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_1, AUTHORSALPHA),
+                Arguments.of("Ne", AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_1, AUTHORSALPHA),
                 Arguments.of("NM", AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_2, AUTHORSALPHA),
                 Arguments.of("NME", AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_3, AUTHORSALPHA),
                 Arguments.of("NMEB", AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_4, AUTHORSALPHA),
-                Arguments.of("NME+", AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_5, AUTHORSALPHA),
-                Arguments.of("vdAal", AUTHOR_FIRSTNAME_FULL_LASTNAME_FULL_WITH_VAN_COUNT_1, AUTHORSALPHA),
-                Arguments.of("vdAvL", AUTHOR_FIRSTNAME_FULL_LASTNAME_FULL_WITH_VAN_COUNT_2, AUTHORSALPHA),
-                Arguments.of("NM+", AUTHOR_FIRSTNAME_FULL_LASTNAME_FULL_AND_OTHERS_COUNT_3, AUTHORSALPHA)
+                Arguments.of("NMEB", AUTHOR_FIRSTNAME_INITIAL_LASTNAME_FULL_COUNT_5, AUTHORSALPHA),
+                Arguments.of("Aa", AUTHOR_FIRSTNAME_FULL_LASTNAME_FULL_WITH_VAN_COUNT_1, AUTHORSALPHA),
+                Arguments.of("AL", AUTHOR_FIRSTNAME_FULL_LASTNAME_FULL_WITH_VAN_COUNT_2, AUTHORSALPHA),
+                Arguments.of("Ne", AUTHOR_FIRSTNAME_FULL_LASTNAME_FULL_AND_OTHERS_COUNT_3, AUTHORSALPHA)
         );
     }
 
@@ -894,7 +899,7 @@ class CitationKeyGeneratorTest {
     @Test
     void generateKeyStripsColonFromTitle() {
         BibEntry entry = new BibEntry().withField(StandardField.TITLE, "Green Scheduling of: Whatever");
-        assertEquals("GreenSchedulingOfWhatever", generateKey(entry, "[title]"));
+        assertEquals("GreenSchedulingOf:Whatever", generateKey(entry, "[title]"));
     }
 
     @Test
@@ -971,7 +976,7 @@ class CitationKeyGeneratorTest {
                 .withField(StandardField.AUTHOR, AUTHOR_STRING_FIRSTNAME_FULL_LASTNAME_FULL_COUNT_1)
                 .withField(StandardField.YEAR, "2019");
 
-        assertEquals("Newton2019", generateKey(entry, "[auth]-[year]"));
+        assertEquals("Newton-2019", generateKey(entry, "[auth]-[year]"));
     }
 
     @Test
@@ -979,7 +984,7 @@ class CitationKeyGeneratorTest {
         BibEntry entry = new BibEntry().withField(StandardField.AUTHOR, "Newton, Isaac")
                                        .withField(StandardField.YEAR, "2019");
 
-        assertEquals("newt2019", generateKey(entry, "[auth4:lower]-[year]"));
+        assertEquals("newt-2019", generateKey(entry, "[auth4:lower]-[year]"));
     }
 
     @Test
@@ -1013,7 +1018,7 @@ class CitationKeyGeneratorTest {
     @Test
     void generateKeyDoesNotModifyTheKeyWithIncorrectRegexReplacement() {
         String pattern = "[title]";
-        GlobalCitationKeyPattern keyPattern = GlobalCitationKeyPattern.fromPattern(pattern);
+        GlobalCitationKeyPatterns keyPattern = GlobalCitationKeyPatterns.fromPattern(pattern);
         CitationKeyPatternPreferences patternPreferences = new CitationKeyPatternPreferences(
                 false,
                 false,

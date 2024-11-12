@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 
 import javafx.collections.FXCollections;
 
+import org.jabref.logic.citationkeypattern.CitationKeyPatternPreferences;
 import org.jabref.model.util.DummyFileUpdateMonitor;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -30,7 +31,8 @@ class ImportFormatReaderIntegrationTest {
         reader = new ImportFormatReader(
                 importerPreferences,
                 mock(ImportFormatPreferences.class, Answers.RETURNS_DEEP_STUBS),
-                new DummyFileUpdateMonitor());
+                mock(CitationKeyPatternPreferences.class), new DummyFileUpdateMonitor()
+        );
     }
 
     @ParameterizedTest
@@ -60,7 +62,6 @@ class ImportFormatReaderIntegrationTest {
         Collection<Object[]> result = new ArrayList<>();
         result.add(new Object[]{"fileformat/RisImporterTest1.ris", "ris", 1});
         result.add(new Object[]{"fileformat/IsiImporterTest1.isi", "isi", 1});
-        result.add(new Object[]{"fileformat/SilverPlatterImporterTest1.txt", "silverplatter", 1});
         result.add(new Object[]{"fileformat/RepecNepImporterTest2.txt", "repecnep", 1});
         result.add(new Object[]{"fileformat/OvidImporterTest3.txt", "ovid", 1});
         result.add(new Object[]{"fileformat/Endnote.entries.enw", "refer", 5});

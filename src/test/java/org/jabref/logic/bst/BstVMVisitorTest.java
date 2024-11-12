@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class BstVMVisitorTest {
 
     @Test
-    public void visitStringsCommand() {
+    void visitStringsCommand() {
         BstVM vm = new BstVM("STRINGS { test.string1 test.string2 test.string3 }");
 
         vm.render(Collections.emptyList());
@@ -36,7 +36,7 @@ class BstVMVisitorTest {
     }
 
     @Test
-    public void visitIntegersCommand() {
+    void visitIntegersCommand() {
         BstVM vm = new BstVM("INTEGERS { variable.a variable.b variable.c }");
 
         vm.render(Collections.emptyList());
@@ -87,7 +87,7 @@ class BstVMVisitorTest {
 
         vm.render(testEntries);
 
-        BstEntry bstEntry = vm.latestContext.entries().get(0);
+        BstEntry bstEntry = vm.latestContext.entries().getFirst();
         assertTrue(bstEntry.fields.containsKey("address"));
         assertTrue(bstEntry.fields.containsKey("author"));
         assertTrue(bstEntry.fields.containsKey("title"));
@@ -107,7 +107,7 @@ class BstVMVisitorTest {
 
         vm.render(testEntries);
 
-        Map<String, String> fields = vm.latestContext.entries().get(0).fields;
+        Map<String, String> fields = vm.latestContext.entries().getFirst().fields;
         assertEquals("Crowston, K. and Annabi, H. and Howison, J. and Masango, C.", fields.get("author"));
         assertEquals("Effective work practices for floss development: A model and propositions", fields.get("title"));
         assertEquals("Hawaii International Conference On System Sciences (HICSS)", fields.get("booktitle"));
@@ -118,7 +118,7 @@ class BstVMVisitorTest {
     }
 
     @Test
-    public void visitExecuteCommand() throws RecognitionException {
+    void visitExecuteCommand() throws RecognitionException {
         BstVM vm = new BstVM("""
                 INTEGERS { variable.a }
                 FUNCTION { init.state.consts } { #5 'variable.a := }
@@ -131,7 +131,7 @@ class BstVMVisitorTest {
     }
 
     @Test
-    public void visitIterateCommand() throws RecognitionException {
+    void visitIterateCommand() throws RecognitionException {
         BstVM vm = new BstVM("""
                 ENTRY { } { } { }
                 FUNCTION { test } { cite$ }
@@ -151,7 +151,7 @@ class BstVMVisitorTest {
     }
 
     @Test
-    public void visitReverseCommand() throws RecognitionException {
+    void visitReverseCommand() throws RecognitionException {
         BstVM vm = new BstVM("""
                 ENTRY { } { } { }
                 FUNCTION { test } { cite$ }
@@ -171,7 +171,7 @@ class BstVMVisitorTest {
     }
 
     @Test
-    public void visitSortCommand() throws RecognitionException {
+    void visitSortCommand() throws RecognitionException {
         BstVM vm = new BstVM("""
                 ENTRY { } { } { }
                 FUNCTION { presort } { cite$ 'sort.key$ := }

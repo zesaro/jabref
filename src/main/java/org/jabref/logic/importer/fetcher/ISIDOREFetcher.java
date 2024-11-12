@@ -7,7 +7,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -28,7 +27,7 @@ import org.jabref.model.entry.types.EntryType;
 import org.jabref.model.entry.types.StandardEntryType;
 
 import jakarta.ws.rs.core.MediaType;
-import org.apache.http.client.utils.URIBuilder;
+import org.apache.hc.core5.net.URIBuilder;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.jooq.lambda.Unchecked;
 import org.slf4j.Logger;
@@ -50,11 +49,7 @@ public class ISIDOREFetcher implements PagedSearchBasedParserFetcher {
 
     private static final String SOURCE_WEB_SEARCH = "https://api.isidore.science/resource/search";
 
-    private final DocumentBuilderFactory factory;
-
-    public ISIDOREFetcher() {
-        this.factory = DocumentBuilderFactory.newInstance();
-    }
+    private static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory.newInstance();
 
     @Override
     public Parser getParser() {
@@ -73,22 +68,20 @@ public class ISIDOREFetcher implements PagedSearchBasedParserFetcher {
                 }
 
                 pushbackInputStream.unread(data);
-                DocumentBuilder builder = this.factory.newDocumentBuilder();
+                DocumentBuilder builder = this.DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
                 Document document = builder.parse(pushbackInputStream);
 
                 // Assuming the root element represents an entry
                 Element entryElement = document.getDocumentElement();
 
                 if (entryElement == null) {
-                    return Collections.emptyList();
+                    return List.of();
                 }
 
                 return parseXMl(entryElement);
             } catch (FetcherException e) {
                 Unchecked.throwChecked(e);
-            } catch (ParserConfigurationException |
-                     IOException |
-                     SAXException e) {
+            } catch (ParserConfigurationException | IOException | SAXException e) {
                 Unchecked.throwChecked(new FetcherException("Issue with parsing link", e));
             }
             return null;
@@ -103,7 +96,7 @@ public class ISIDOREFetcher implements PagedSearchBasedParserFetcher {
     }
 
     @Override
-    public URL getURLForQuery(QueryNode luceneQuery, int pageNumber) throws URISyntaxException, MalformedURLException, FetcherException {
+    public URL getURLForQuery(QueryNode luceneQuery, int pageNumber) throws URISyntaxException, MalformedURLException {
         ISIDOREQueryTransformer queryTransformer = new ISIDOREQueryTransformer();
         String transformedQuery = queryTransformer.transformLuceneQuery(luceneQuery).orElse("");
         URIBuilder uriBuilder = new URIBuilder(SOURCE_WEB_SEARCH);

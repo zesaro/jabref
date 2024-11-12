@@ -47,7 +47,7 @@ public class DOI implements Identifier {
             + "10"                              // directory indicator
             + "(?:\\.[0-9]+)+"                  // registrant codes
             + "[/:]"                            // divider
-            + "(?:[^\\s,;]+[^,;(\\.\\s)])"      // suffix alphanumeric without " "/","/";" and not ending on "."/","/";"
+            + "(?:[^\\s,]+[^,;(\\.\\s)])"       // suffix alphanumeric without " "/"," and not ending on "."/","/";"
             + ")";                              // end group \1
 
     // Regex (Short DOI)
@@ -124,13 +124,8 @@ public class DOI implements Identifier {
 
         // HTTP URL decoding
         if (doi.matches(HTTP_EXP) || doi.matches(SHORT_DOI_HTTP_EXP)) {
-            try {
-                // decodes path segment
-                URI url = new URI(trimmedDoi);
-                trimmedDoi = url.getScheme() + "://" + url.getHost() + url.getPath();
-            } catch (URISyntaxException e) {
-                throw new IllegalArgumentException(doi + " is not a valid HTTP DOI/Short DOI.");
-            }
+            // decodes path segment
+            trimmedDoi = URLDecoder.decode(trimmedDoi, StandardCharsets.UTF_8);
         }
 
         // Extract DOI/Short DOI
@@ -206,6 +201,7 @@ public class DOI implements Identifier {
      */
     public static Optional<DOI> findInText(String text) {
         Optional<DOI> result = Optional.empty();
+        text = text.replaceAll("[�]", "");
 
         Matcher matcher = FIND_DOI_PATT.matcher(text);
         if (matcher.find()) {
@@ -238,7 +234,8 @@ public class DOI implements Identifier {
      *
      * @return the plain DOI/Short DOI value.
      */
-    public String getDOI() {
+    @Override
+    public String asString() {
         return doi;
     }
 
@@ -273,7 +270,7 @@ public class DOI implements Identifier {
             return Optional.of(uri);
         } catch (URISyntaxException e) {
             // should never happen
-            LOGGER.error(doi + " could not be encoded as URI.", e);
+            LOGGER.error("{} could not be encoded as URI.", doi, e);
             return Optional.empty();
         }
     }
@@ -290,11 +287,6 @@ public class DOI implements Identifier {
     @Override
     public Field getDefaultField() {
         return StandardField.DOI;
-    }
-
-    @Override
-    public String getNormalized() {
-        return doi;
     }
 
     /**

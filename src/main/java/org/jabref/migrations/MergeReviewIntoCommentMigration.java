@@ -26,6 +26,10 @@ public class MergeReviewIntoCommentMigration {
          */
         List<BibEntry> entries = Objects.requireNonNull(parserResult).getDatabase().getEntries();
 
+        if (!entries.isEmpty()) {
+            parserResult.setChangedOnMigration(true);
+        }
+
         entries.stream()
                .filter(MergeReviewIntoCommentMigration::hasReviewField)
                .filter(entry -> !MergeReviewIntoCommentMigration.hasCommentField(entry))
@@ -55,7 +59,7 @@ public class MergeReviewIntoCommentMigration {
 
     private String mergeCommentFieldIfPresent(BibEntry entry, String review) {
         if (entry.getField(StandardField.COMMENT).isPresent()) {
-            LOGGER.info("Both Comment and Review fields are present in %s! Merging them into the comment field.".formatted(entry.getAuthorTitleYear(150)));
+            LOGGER.info("Both Comment and Review fields are present in {}. Merging them into the comment field.", entry.getCitationKey().orElse(entry.getAuthorTitleYear(150)));
             return "%s\n%s:\n%s".formatted(entry.getField(StandardField.COMMENT).get().trim(), Localization.lang("Review"), review.trim());
         }
         return review;
@@ -64,7 +68,7 @@ public class MergeReviewIntoCommentMigration {
     private void migrate(BibEntry entry, ParserResult parserResult) {
         if (hasReviewField(entry)) {
             updateFields(entry, mergeCommentFieldIfPresent(entry, entry.getField(StandardField.REVIEW).get()));
-            parserResult.wasChangedOnMigration();
+            parserResult.setChangedOnMigration(true);
         }
     }
 

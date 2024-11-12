@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 import org.jabref.logic.cleanup.Formatter;
 import org.jabref.logic.formatter.Formatters;
+import org.jabref.logic.formatter.bibtexfields.RemoveEnclosingBracesFormatter;
 import org.jabref.logic.formatter.casechanger.Word;
 import org.jabref.logic.layout.format.RemoveLatexCommandsFormatter;
 import org.jabref.model.database.BibDatabase;
@@ -35,6 +36,7 @@ import org.jabref.model.entry.field.StandardField;
 import org.jabref.model.strings.LatexToUnicodeAdapter;
 import org.jabref.model.strings.StringUtil;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,6 +85,8 @@ public class BracketedPattern {
     private static final Pattern DEPARTMENTS = Pattern.compile("^d[ei]p.*", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern WHITESPACE = Pattern.compile("\\p{javaWhitespace}");
+
+    private static final RemoveEnclosingBracesFormatter ENCLOSING_BRACES_FORMATTER = new RemoveEnclosingBracesFormatter();
 
     private enum Institution {
         SCHOOL,
@@ -205,11 +209,10 @@ public class BracketedPattern {
      */
     public static Function<String, String> expandBracketContent(Character keywordDelimiter, BibEntry entry, BibDatabase database) {
         return (String bracket) -> {
-            String expandedPattern;
             List<String> fieldParts = parseFieldAndModifiers(bracket);
             // check whether there is a modifier on the end such as
             // ":lower":
-            expandedPattern = getFieldValue(entry, fieldParts.getFirst(), keywordDelimiter, database);
+            String expandedPattern = getFieldValue(entry, fieldParts.getFirst(), keywordDelimiter, database);
             if (fieldParts.size() > 1) {
                 // apply modifiers:
                 expandedPattern = applyModifiers(expandedPattern, fieldParts, 1, expandBracketContent(keywordDelimiter, entry, database));
@@ -229,6 +232,7 @@ public class BracketedPattern {
     public static String expandBrackets(String pattern, Function<String, String> bracketContentHandler) {
         Objects.requireNonNull(pattern);
         StringBuilder expandedPattern = new StringBuilder();
+        pattern = pattern.replace("\\\"", "\u0A17");
         StringTokenizer parsedPattern = new StringTokenizer(pattern, "\\[]\"", true);
 
         while (parsedPattern.hasMoreTokens()) {
@@ -250,7 +254,7 @@ public class BracketedPattern {
             }
         }
 
-        return expandedPattern.toString();
+        return expandedPattern.toString().replace("\u0A17", "\\\"");
     }
 
     /**
@@ -526,17 +530,17 @@ public class BracketedPattern {
         return AuthorList.parse(unparsedAuthors).getAuthors().stream()
                          .map(author -> {
                              // If the author is an institution, use an institution key instead of the full name
-                             String lastName = author.getLast()
+                             String lastName = author.getFamilyName()
                                                      .map(lastPart -> isInstitution(author) ?
                                                              generateInstitutionKey(lastPart) :
                                                              LatexToUnicodeAdapter.format(lastPart))
                                                      .orElse(null);
                              return new Author(
-                                     author.getFirst().map(LatexToUnicodeAdapter::format).orElse(null),
-                                     author.getFirstAbbr().map(LatexToUnicodeAdapter::format).orElse(null),
-                                     author.getVon().map(LatexToUnicodeAdapter::format).orElse(null),
+                                     author.getGivenName().map(LatexToUnicodeAdapter::format).orElse(null),
+                                     author.getGivenNameAbbreviated().map(LatexToUnicodeAdapter::format).orElse(null),
+                                     author.getNamePrefix().map(LatexToUnicodeAdapter::format).orElse(null),
                                      lastName,
-                                     author.getJr().map(LatexToUnicodeAdapter::format).orElse(null));
+                                     author.getNameSuffix().map(LatexToUnicodeAdapter::format).orElse(null));
                          })
                          .collect(AuthorList.collect());
     }
@@ -548,9 +552,9 @@ public class BracketedPattern {
      * @return true if only the last name is present and it contains at least one whitespace character.
      */
     private static boolean isInstitution(Author author) {
-        return author.getFirst().isEmpty() && author.getFirstAbbr().isEmpty() && author.getJr().isEmpty()
-                && author.getVon().isEmpty() && author.getLast().isPresent()
-                && WHITESPACE.matcher(author.getLast().get()).find();
+        return author.getGivenName().isEmpty() && author.getGivenNameAbbreviated().isEmpty() && author.getNameSuffix().isEmpty()
+                && author.getNamePrefix().isEmpty() && author.getFamilyName().isPresent()
+                && WHITESPACE.matcher(author.getFamilyName().get()).find();
     }
 
     /**
@@ -765,7 +769,7 @@ public class BracketedPattern {
     private static String firstAuthor(AuthorList authorList) {
         return authorList.getAuthors().stream()
                          .findFirst()
-                         .flatMap(author -> author.getLast().isPresent() ? author.getLast() : author.getVon())
+                         .flatMap(author -> author.getFamilyName().isPresent() ? author.getFamilyName() : author.getNamePrefix())
                          .orElse("");
     }
 
@@ -779,7 +783,7 @@ public class BracketedPattern {
     private static String firstAuthorForenameInitials(AuthorList authorList) {
         return authorList.getAuthors().stream()
                          .findFirst()
-                         .flatMap(Author::getFirstAbbr)
+                         .flatMap(Author::getGivenNameAbbreviated)
                          .map(s -> s.substring(0, 1))
                          .orElse("");
     }
@@ -793,7 +797,7 @@ public class BracketedPattern {
      */
     private static String firstAuthorVonAndLast(AuthorList authorList) {
         return authorList.isEmpty() ? "" :
-                authorList.getAuthor(0).getLastOnly().replace(" ", "");
+                authorList.getAuthor(0).getNamePrefixAndFamilyName().replace(" ", "");
     }
 
     /**
@@ -806,7 +810,7 @@ public class BracketedPattern {
         if (authorList.isEmpty()) {
             return "";
         }
-        return authorList.getAuthors().get(authorList.getNumberOfAuthors() - 1).getLast().orElse("");
+        return authorList.getAuthors().get(authorList.getNumberOfAuthors() - 1).getFamilyName().orElse("");
     }
 
     /**
@@ -820,7 +824,7 @@ public class BracketedPattern {
         if (authorList.isEmpty()) {
             return "";
         }
-        return authorList.getAuthor(authorList.getNumberOfAuthors() - 1).getFirstAbbr().map(s -> s.substring(0, 1))
+        return authorList.getAuthor(authorList.getNumberOfAuthors() - 1).getGivenNameAbbreviated().map(s -> s.substring(0, 1))
                          .orElse("");
     }
 
@@ -844,51 +848,44 @@ public class BracketedPattern {
      * @param authorList an {@link AuthorList}
      * @return the initials of all authors' names
      */
-    static String authorsAlpha(AuthorList authorList) {
+    public static String authorsAlpha(AuthorList authorList) {
         StringBuilder alphaStyle = new StringBuilder();
-        int maxAuthors;
-        final boolean maxAuthorsExceeded;
-        if (authorList.getNumberOfAuthors() <= MAX_ALPHA_AUTHORS) {
-            maxAuthors = authorList.getNumberOfAuthors();
-            maxAuthorsExceeded = false;
-        } else {
-            maxAuthors = MAX_ALPHA_AUTHORS - 1;
-            maxAuthorsExceeded = true;
-        }
+        int numberOfAuthors = authorList.getNumberOfAuthors();
+        boolean andOthersPresent = numberOfAuthors > 1 &&
+                authorList.getAuthor(numberOfAuthors - 1).equals(Author.OTHERS);
 
-        if (authorList.getNumberOfAuthors() == 1) {
-            String[] firstAuthor = authorList.getAuthor(0).getLastOnly()
-                                             .replaceAll("\\s+", " ").trim().split(" ");
-            // take first letter of any "prefixes" (e.g. van der Aalst -> vd)
-            for (int j = 0; j < (firstAuthor.length - 1); j++) {
-                alphaStyle.append(firstAuthor[j], 0, 1);
+        if (numberOfAuthors == 1 || andOthersPresent) {
+            // Single author or "and others" case
+            String lastName = authorList.getAuthor(0).getFamilyName().orElse("");
+            String formattedName = ENCLOSING_BRACES_FORMATTER.format(lastName);
+            if (!formattedName.equals(lastName)) {
+                // Inequality => braces were removed, indicating an organization
+                alphaStyle.append(getOrganizationInitials(formattedName));
+            } else {
+                alphaStyle.append(lastName, 0, Math.min(2, lastName.length()));
             }
-            // append last part of last name completely
-            alphaStyle.append(firstAuthor[firstAuthor.length - 1], 0,
-                    Math.min(3, firstAuthor[firstAuthor.length - 1].length()));
         } else {
-            boolean andOthersPresent = authorList.getAuthor(maxAuthors - 1).equals(Author.OTHERS);
-            if (andOthersPresent) {
-                maxAuthors--;
-            }
-            List<String> vonAndLastNames = authorList.getAuthors().stream()
-                                                     .limit(maxAuthors)
-                                                     .map(Author::getLastOnly)
-                                                     .collect(Collectors.toList());
-            for (String vonAndLast : vonAndLastNames) {
-                // replace all whitespaces by " "
-                // split the lastname at " "
-                String[] nameParts = vonAndLast.replaceAll("\\s+", " ").trim().split(" ");
-                for (String part : nameParts) {
-                    // use first character of each part of lastname
-                    alphaStyle.append(part, 0, 1);
+            int maxAuthors = Math.min(numberOfAuthors, MAX_ALPHA_AUTHORS);
+            for (int i = 0; i < maxAuthors; i++) {
+                String lastName = authorList.getAuthor(i).getFamilyName().orElse("");
+                alphaStyle.append(lastName, 0, 1);
+                if (alphaStyle.length() >= 4) {
+                    // Stop after 4 authors
+                    break;
                 }
-            }
-            if (andOthersPresent || maxAuthorsExceeded) {
-                alphaStyle.append("+");
             }
         }
         return alphaStyle.toString();
+    }
+
+    private static String getOrganizationInitials(String orgName) {
+        StringBuilder initials = new StringBuilder();
+        for (String part : orgName.split("\\s+")) {
+            if (!part.isEmpty() && Character.isUpperCase(part.charAt(0))) {
+                initials.append(part.charAt(0));
+            }
+        }
+        return initials.toString();
     }
 
     /**
@@ -902,7 +899,7 @@ public class BracketedPattern {
      * @return a string consisting of authors' last names separated by a `delimiter` and with any authors excess of
      * `maxAuthors` replaced with `suffix`
      */
-    private static String joinAuthorsOnLastName(AuthorList authorList, int maxAuthors, String delimiter, final String suffix) {
+    public static String joinAuthorsOnLastName(AuthorList authorList, int maxAuthors, String delimiter, final String suffix) {
         final String finalSuffix = authorList.getNumberOfAuthors() > maxAuthors ? suffix : "";
         return authorList.getAuthors().stream()
                          .map(author -> {
@@ -913,7 +910,7 @@ public class BracketedPattern {
                                      return Optional.of(suffix);
                                  }
                              } else {
-                                 return author.getLast();
+                                 return author.getFamilyName();
                              }
                          })
                          .flatMap(Optional::stream)
@@ -970,7 +967,7 @@ public class BracketedPattern {
             // exception: If the second author is "and others", then do the appendix handling (in the other branch)
             return joinAuthorsOnLastName(authorList, 2, delim, "");
         } else {
-            return authorList.getAuthor(0).getLast().orElse("") + append;
+            return authorList.getAuthor(0).getFamilyName().orElse("") + append;
         }
     }
 
@@ -990,7 +987,7 @@ public class BracketedPattern {
         if (lastAuthor.equals(Author.OTHERS)) {
             return "+";
         }
-        String lastName = lastAuthor.getLast()
+        String lastName = lastAuthor.getFamilyName()
                                     .map(CitationKeyGenerator::removeDefaultUnwantedCharacters).orElse("");
         return lastName.length() > n ? lastName.substring(0, n) : lastName;
     }
@@ -1010,7 +1007,7 @@ public class BracketedPattern {
         final int numberOfAuthors = authorList.getNumberOfAuthors();
 
         if (numberOfAuthors == 1) {
-            author.append(authorList.getAuthor(0).getLast().orElse(""));
+            author.append(authorList.getAuthor(0).getFamilyName().orElse(""));
         } else if (numberOfAuthors >= 2) {
             for (int i = 0; (i < numberOfAuthors) && (i < 3); i++) {
                 author.append(authNofMth(authorList, 1, i + 1));
@@ -1037,7 +1034,7 @@ public class BracketedPattern {
 
         final int numberOfAuthors = authorList.getNumberOfAuthors();
         final boolean lastAuthorIsOthers = authorList.getAuthor(numberOfAuthors - 1).equals(Author.OTHERS);
-        if ((n > 1) && ((n < numberOfAuthors) || lastAuthorIsOthers)) {
+        if (n >= numberOfAuthors && lastAuthorIsOthers) {
             final int limit = Math.min(n - 1, numberOfAuthors - 1);
             // special handling if the last author is "Others"
             // This gets the single char "+" only
@@ -1143,11 +1140,19 @@ public class BracketedPattern {
             } else if (currentChar == '\\') {
                 if (escaped) {
                     escaped = false;
-                    current.append(currentChar);
+                    // Only : needs to be escaped
+                    // " -> regex("...", "...") - escaping should be passed through to the regex parser
+                    // : -> :abc:def
+                    current.append('\\');
+                    current.append('\\');
                 } else {
                     escaped = true;
                 }
             } else if (escaped) {
+                if (currentChar != ':') {
+                    // Only : needs to be escaped
+                    current.append('\\');
+                }
                 current.append(currentChar);
                 escaped = false;
             } else {
@@ -1222,14 +1227,14 @@ public class BracketedPattern {
      *         <li>null if content is null</li>
      *         </ul>
      */
-    private static String generateInstitutionKey(String content) {
+     @VisibleForTesting
+     static String generateInstitutionKey(String content) {
         if (content == null) {
             return null;
         }
         if (content.isBlank()) {
             return "";
         }
-
         Matcher matcher = INLINE_ABBREVIATION.matcher(content);
         if (matcher.find()) {
             return LatexToUnicodeAdapter.format(matcher.group());
@@ -1313,8 +1318,7 @@ public class BracketedPattern {
         // Putting parts together.
         return (university == null ? Objects.toString(rest, "") : university)
                 + (school == null ? "" : school)
-                + ((department == null)
-                || ((school != null) && department.equals(school)) ? "" : department);
+                + ((department == null) || (department.equals(school)) ? "" : department);
     }
 
     /**
