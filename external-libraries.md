@@ -546,12 +546,6 @@ License: LGPL-3
 ```
 
 ```yaml
-Id:      org.apiguardian:apiguardian-api
-Project: @API Guardian
-URL:     https://github.com/apiguardian-team/apiguardian
-```
-
-```yaml
 Id:      org.apache.velocity:velocity-engine-core
 Project: Apache Velocity
 URL:     https://velocity.apache.org/
