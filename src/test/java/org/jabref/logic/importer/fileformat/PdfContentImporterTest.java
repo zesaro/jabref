@@ -70,7 +70,7 @@ class PdfContentImporterTest {
                 Corpus linguistics investigates human language by starting out from large
                 """;
 
-        assertEquals(Optional.of(entry), importer.getEntryFromPDFContent(firstPageContents, "\n", ""));
+        assertEquals(Optional.of(entry), importer.getEntryFromPDFContent(firstPageContents, "\n", Optional.empty()));
     }
 
     @Test
@@ -93,7 +93,7 @@ class PdfContentImporterTest {
                 UNSPECIFIED
                 Master of Research (MRes) thesis, University of Kent,.""";
 
-        assertEquals(Optional.of(entry), importer.getEntryFromPDFContent(firstPageContents, "\n", ""));
+        assertEquals(Optional.of(entry), importer.getEntryFromPDFContent(firstPageContents, "\n", Optional.empty()));
     }
 
     @Test
@@ -126,7 +126,7 @@ class PdfContentImporterTest {
                 British Journal of Nutrition
                 https://doi.org/10.1017/S0007114507795296 Published online by Cambridge University Press""";
 
-        assertEquals(Optional.of(entry), importer.getEntryFromPDFContent(firstPageContent, "\n", ""));
+        assertEquals(Optional.of(entry), importer.getEntryFromPDFContent(firstPageContent, "\n", Optional.empty()));
     }
 
     @ParameterizedTest
@@ -140,6 +140,7 @@ class PdfContentImporterTest {
     private static Stream<Arguments> providePdfData() {
         return Stream.of(
                 Arguments.of("Fundamentals of Distributed Computing: A Practical Tour of Vector Clock Systems", "/pdfs/PdfContentImporter/Baldoni2002.pdf"),
+                Arguments.of("JabRef Example for Reference Parsing", "/pdfs/IEEE/ieee-paper-cover.pdf"),
                 Arguments.of("On How We Can Teach – Exploring New Ways in Professional Software Development for Students", "/pdfs/PdfContentImporter/Kriha2018.pdf"),
                 Arguments.of("JabRef Example for Reference Parsing", "/pdfs/IEEE/ieee-paper.pdf"),
                 Arguments.of("Paper Title", "/org/jabref/logic/importer/util/LNCS-minimal.pdf"),
@@ -149,7 +150,8 @@ class PdfContentImporterTest {
                 Arguments.of("On the impact of service-oriented patterns on software evolvability: a controlled experiment and metric-based analysis", "/pdfs/PdfContentImporter/Bogner2019.pdf"),
                 Arguments.of("Pandemic programming", "/pdfs/PdfContentImporter/Ralph2020.pdf"),
                 Arguments.of("Do RESTful API design rules have an impact on the understandability of Web APIs?", "/pdfs/PdfContentImporter/Bogner2023.pdf"),
-                Arguments.of("Adopting microservices and DevOps in the cyber-physical systems domain: A rapid review and case study", "/pdfs/PdfContentImporter/Fritzsch2022.pdf")
+                Arguments.of("Adopting microservices and DevOps in the cyber-physical systems domain: A rapid review and case study", "/pdfs/PdfContentImporter/Fritzsch2022.pdf"),
+                Arguments.of("OPIUM: Optimal Package Install/Uninstall Manager", "/pdfs/PdfContentImporter/Tucker2007.pdf")
         );
     }
 }
