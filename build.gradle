@@ -393,7 +393,7 @@ dependencies {
     testRuntimeOnly 'com.tngtech.archunit:archunit-junit5-engine:1.4.0'
     testImplementation 'com.tngtech.archunit:archunit-junit5-api:1.4.0'
     testImplementation "org.testfx:testfx-core:4.0.16-alpha"
-    testImplementation "org.testfx:testfx-junit5:4.0.16-alpha"
+    testImplementation "org.testfx:testfx-junit5:4.0.18"
     testImplementation "org.hamcrest:hamcrest-library:3.0"
     testImplementation "com.github.javaparser:javaparser-symbol-solver-core:3.26.4"
 
