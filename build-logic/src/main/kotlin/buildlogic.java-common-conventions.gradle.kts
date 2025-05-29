@@ -14,6 +14,7 @@ repositories {
     maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
     maven { url = uri("https://jitpack.io") }
     maven { url = uri("https://oss.sonatype.org/content/groups/public") }
+    maven { url = uri("https://dev.bibsonomy.org/maven2/") }
 
     // Required for one.jpro.jproutils:tree-showing
     maven { url = uri("https://sandec.jfrog.io/artifactory/repo") }

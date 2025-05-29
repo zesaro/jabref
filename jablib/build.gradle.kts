@@ -68,6 +68,11 @@ dependencies {
 
     implementation("com.h2database:h2-mvstore:2.3.232")
 
+    // BibSonomy
+    implementation ("org.bibsonomy:bibsonomy-rest-client:3.9.2") {
+        exclude(group = "jaxb-impl")
+    }
+
     // required for reading write-protected PDFs - see https://github.com/JabRef/jabref/pull/942#issuecomment-209252635
     implementation("org.bouncycastle:bcprov-jdk18on:1.80")
 

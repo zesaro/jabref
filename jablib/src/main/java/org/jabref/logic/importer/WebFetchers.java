@@ -14,7 +14,7 @@ import org.jabref.logic.importer.fetcher.ACS;
 import org.jabref.logic.importer.fetcher.ApsFetcher;
 import org.jabref.logic.importer.fetcher.ArXivFetcher;
 import org.jabref.logic.importer.fetcher.AstrophysicsDataSystem;
-import org.jabref.logic.importer.fetcher.BibSonomy;
+import org.jabref.logic.importer.fetcher.BibSonomyFetcher;
 import org.jabref.logic.importer.fetcher.BiodiversityLibrary;
 import org.jabref.logic.importer.fetcher.BvbFetcher;
 import org.jabref.logic.importer.fetcher.CiteSeer;
@@ -235,7 +235,7 @@ public class WebFetchers {
         fetchers.add(new ScienceDirect(importerPreferences));
         fetchers.add(new AstrophysicsDataSystem(importFormatPreferences, importerPreferences));
         fetchers.add(new BiodiversityLibrary(importerPreferences));
-        fetchers.add(new BibSonomy(importFormatPreferences, importerPreferences));
+        fetchers.add(new BibSonomyFetcher(importFormatPreferences, importerPreferences));
         return fetchers;
     }
 }
