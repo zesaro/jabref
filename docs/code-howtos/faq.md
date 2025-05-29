@@ -27,7 +27,7 @@ Background: [OpenRewrite](https://docs.openrewrite.org/) is an automated refacto
 
 You have probably used Strings that are visible on the UI (to the user) but not wrapped them using `Localization.lang(...)` and added them to the [localization properties file](https://github.com/JabRef/jabref/blob/main/src/main/resources/l10n/JabRef_en.properties).
 
-Read more about the background and format of localization in JabRef [here](https://devdocs.jabref.org/code-howtos/localization.html).
+Read more about the [background and format of localization](https://devdocs.jabref.org/code-howtos/localization.html) in JabRef.
 
 ### `org.jabref.logic.l10n.LocalizationConsistencyTest findObsoleteLocalizationKeys` <span style="color:red">FAILED</span>
 
@@ -35,18 +35,18 @@ Navigate to the unused key-value pairs in the file and remove them.
 You can always click on the details of the failing test to pinpoint which keys are unused.
 
 Background: There are localization keys in the [localization properties file](https://github.com/JabRef/jabref/blob/main/src/main/resources/l10n/JabRef_en.properties) that are not used in the code, probably due to the removal of existing code.
-Read more about the background and format of localization in JabRef [here](https://devdocs.jabref.org/code-howtos/localization.html).
+Read more about the [background and format of localization](https://devdocs.jabref.org/code-howtos/localization.html) in JabRef.
 
 ### `org.jabref.logic.citationstyle.CitationStyleCatalogGenerator generateCitationStyleCatalog` <span style="color:red">ERROR: Could not find any citation style. Tried with /ieee.csl.</span>
 
-Check the directory `src/main/resources/csl-styles`.
+Check the directory `jablib/src/main/resources/csl-styles`.
 If it is missing or empty, run `git submodule update`.
 Now, check inside if `ieee.csl` exists.
 If it does not, run `git reset --hard` **inside that directory**.
 
 ### `java.lang.IllegalArgumentException`: Unable to load locale en-US <span style="color:red">ERROR: Could not generate BibEntry citation. The CSL engine could not create a preview for your item.</span>
 
-Check the directory `src/main/resources/csl-locales`.
+Check the directory `jablib/src/main/resources/csl-locales`.
 If it is missing or empty, run `git submodule update`.
 If still not fixed, run `git reset --hard` **inside that directory**.
 
@@ -54,7 +54,7 @@ If still not fixed, run `git reset --hard` **inside that directory**.
 
 Check if you've used `System.out.println(...)` (the standard output stream) to log anything into the console.
 This is an architectural violation, as you should use the Logger instead for logging.
-More details on how to log can be found [here](https://devdocs.jabref.org/code-howtos/logging.html).
+More details on [how to log](https://devdocs.jabref.org/code-howtos/logging.html).
 
 ### `org.jabref.architecture.MainArchitectureTest doNotUseLogicInModel` <span style="color:red">FAILED</span>
 
@@ -72,8 +72,8 @@ This test is triggered when any kind of documentation is touched (be it the JabR
 
 ### Failing <b>Fetcher</b> tests
 
-Fetcher tests are run when any file in the `.../fetcher` directory has been touched. If you have changed any fetcher logic, check if the changes are correct. You can look for more details on how to locally run fetcher tests [here](https://devdocs.jabref.org/code-howtos/testing.html#fetchers-in-tests).
-Otherwise, since these tests depend on remote services, their failure can also be caused by the network or an external server, and thus can be ignored in the context of your contribution. For more information, you can look [here](https://devdocs.jabref.org/code-howtos/fetchers.html#committing-and-pushing-changes-to-fetcher-files).
+Fetcher tests are run when any file in the `.../fetcher` directory has been touched. If you have changed any fetcher logic, check if the changes are correct. You can look for more details on how to locally [run fetcher tests](https://devdocs.jabref.org/code-howtos/testing.html#fetchers-in-tests).
+Otherwise, since these tests depend on remote services, their failure can also be caused by the network or an external server, and thus can be ignored in the context of your contribution. For more information, you can look at [commiting and pushing changes to fetcher tests](https://devdocs.jabref.org/code-howtos/fetchers.html#committing-and-pushing-changes-to-fetcher-files).
 
 ## Gradle outputs
 
@@ -111,7 +111,7 @@ For `csl-styles`:
 
 ```bash
 git merge origin/main
-git checkout main -- src/main/resources/csl-styles
+git checkout main -- jablib/src/main/resources/csl-styles
 ... git commit ... 
 git push
 ```
@@ -129,7 +129,7 @@ And similarly for `csl-locales` or `abbrv.jabref.org`.
 2. `cd` into the changed submodules directory (lets say `csl-styles` was changed):
 
     ```bash
-    cd src/main/resources/csl-styles
+    cd jablib/src/main/resources/csl-styles
     ```
 
 3. Find the latest submodule commit id from remote (github):
