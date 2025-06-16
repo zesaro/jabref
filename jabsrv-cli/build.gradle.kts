@@ -42,7 +42,7 @@ dependencies {
     annotationProcessor("info.picocli:picocli-codegen:4.7.7")
 
     // required because of "service implementation must be defined in the same module as the provides directive"
-    implementation("org.postgresql:postgresql:42.7.5")
+    implementation("org.postgresql:postgresql:42.7.7")
     implementation("org.bouncycastle:bcprov-jdk18on:1.80")
     implementation("com.konghq:unirest-modules-gson:4.4.7")
     implementation(platform("ai.djl:bom:0.33.0"))

@@ -93,7 +93,7 @@ dependencies {
 
     implementation("com.fasterxml:aalto-xml:1.3.3")
 
-    implementation("org.postgresql:postgresql:42.7.5")
+    implementation("org.postgresql:postgresql:42.7.7")
 
     antlr("org.antlr:antlr4:4.13.2")
     implementation("org.antlr:antlr4-runtime:4.13.2")
