@@ -14,11 +14,11 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 
 import org.jabref.gui.AbstractViewModel;
-import org.jabref.gui.ClipBoardManager;
 import org.jabref.gui.DialogService;
 import org.jabref.gui.LibraryTabContainer;
 import org.jabref.gui.StateManager;
 import org.jabref.gui.actions.SimpleCommand;
+import org.jabref.gui.clipboard.ClipBoardManager;
 import org.jabref.gui.entryeditor.AdaptVisibleTabs;
 import org.jabref.gui.frame.SidePanePreferences;
 import org.jabref.gui.preferences.GuiPreferences;
@@ -88,18 +88,21 @@ public class SidePaneViewModel extends AbstractViewModel {
         SidePaneComponent sidePaneComponent = sidePaneComponentLookup.get(pane);
         if (sidePaneComponent == null) {
             sidePaneComponent = switch (pane) {
-                case GROUPS -> new GroupsSidePaneComponent(
-                        new ClosePaneAction(pane),
-                        new MoveUpAction(pane),
-                        new MoveDownAction(pane),
-                        sidePaneContentFactory,
-                        preferences.getGroupsPreferences(),
-                        dialogService);
-                case WEB_SEARCH, OPEN_OFFICE -> new SidePaneComponent(pane,
-                        new ClosePaneAction(pane),
-                        new MoveUpAction(pane),
-                        new MoveDownAction(pane),
-                        sidePaneContentFactory);
+                case GROUPS ->
+                        new GroupsSidePaneComponent(
+                                new ClosePaneAction(pane),
+                                new MoveUpAction(pane),
+                                new MoveDownAction(pane),
+                                sidePaneContentFactory,
+                                preferences.getGroupsPreferences(),
+                                dialogService);
+                case WEB_SEARCH,
+                     OPEN_OFFICE ->
+                        new SidePaneComponent(pane,
+                                new ClosePaneAction(pane),
+                                new MoveUpAction(pane),
+                                new MoveDownAction(pane),
+                                sidePaneContentFactory);
             };
             sidePaneComponentLookup.put(pane, sidePaneComponent);
         }

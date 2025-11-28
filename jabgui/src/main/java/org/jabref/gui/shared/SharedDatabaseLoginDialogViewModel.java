@@ -22,11 +22,11 @@ import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 
 import org.jabref.gui.AbstractViewModel;
-import org.jabref.gui.ClipBoardManager;
 import org.jabref.gui.DialogService;
 import org.jabref.gui.LibraryTab;
 import org.jabref.gui.LibraryTabContainer;
 import org.jabref.gui.StateManager;
+import org.jabref.gui.clipboard.ClipBoardManager;
 import org.jabref.gui.exporter.SaveDatabaseAction;
 import org.jabref.gui.help.HelpAction;
 import org.jabref.gui.preferences.GuiPreferences;
@@ -236,7 +236,7 @@ public class SharedDatabaseLoginDialogViewModel extends AbstractViewModel {
                     ButtonType.OK, openHelp);
 
             result.filter(btn -> btn.equals(openHelp)).ifPresent(btn -> new HelpAction(HelpFile.SQL_DATABASE_MIGRATION, dialogService, preferences.getExternalApplicationsPreferences()).execute());
-            result.filter(btn -> ButtonType.OK.equals(btn)).ifPresent(btn -> openSharedDatabase(connectionProperties));
+            result.filter(ButtonType.OK::equals).ifPresent(btn -> openSharedDatabase(connectionProperties));
         }
         loading.set(false);
         return false;

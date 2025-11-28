@@ -1,6 +1,3 @@
-/**
- *
- */
 package org.jabref.logic.importer.fileformat;
 
 import java.io.BufferedReader;
@@ -20,6 +17,7 @@ import org.jabref.model.entry.field.StandardField;
 
 import kong.unirest.core.json.JSONException;
 import kong.unirest.core.json.JSONObject;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +33,7 @@ public class MrDLibImporter extends Importer {
     private String recommendationSetId;
 
     @Override
-    public boolean isRecognizedFormat(BufferedReader input) throws IOException {
+    public boolean isRecognizedFormat(@NonNull BufferedReader input) throws IOException {
         String recommendationsAsString = convertToString(input);
         try {
             JSONObject jsonObject = new JSONObject(recommendationsAsString);
@@ -49,7 +47,7 @@ public class MrDLibImporter extends Importer {
     }
 
     @Override
-    public ParserResult importDatabase(BufferedReader input) throws IOException {
+    public ParserResult importDatabase(@NonNull BufferedReader input) throws IOException {
         parse(input);
         return parserResult;
     }
@@ -87,7 +85,7 @@ public class MrDLibImporter extends Importer {
             while ((line = input.readLine()) != null) {
                 stringBuilder.append(line);
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             LOGGER.error("", e);
         }
         return stringBuilder.toString();
@@ -104,7 +102,7 @@ public class MrDLibImporter extends Importer {
      *
      * @param input A BufferedReader with a reference to a string with the server's response
      */
-    private void parse(BufferedReader input) throws IOException {
+    private void parse(BufferedReader input) {
         // The Bibdatabase that gets returned in the ParserResult.
         BibDatabase bibDatabase = new BibDatabase();
         // The document to parse

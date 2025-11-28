@@ -11,25 +11,29 @@ import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jabref.logic.formatter.Formatter;
 import org.jabref.logic.formatter.Formatters;
 import org.jabref.logic.formatter.IdentityFormatter;
+import org.jabref.logic.formatter.bibtexfields.ConvertMSCCodesFormatter;
 import org.jabref.logic.formatter.bibtexfields.HtmlToLatexFormatter;
 import org.jabref.logic.formatter.bibtexfields.HtmlToUnicodeFormatter;
 import org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatter;
+import org.jabref.logic.formatter.bibtexfields.NormalizeIssn;
 import org.jabref.logic.formatter.bibtexfields.NormalizeMonthFormatter;
 import org.jabref.logic.formatter.bibtexfields.NormalizePagesFormatter;
 import org.jabref.logic.formatter.bibtexfields.OrdinalsToSuperscriptFormatter;
 import org.jabref.logic.formatter.bibtexfields.UnicodeToLatexFormatter;
 import org.jabref.logic.layout.format.LatexToUnicodeFormatter;
 import org.jabref.logic.layout.format.ReplaceUnicodeLigaturesFormatter;
+import org.jabref.logic.util.strings.StringUtil;
 import org.jabref.model.FieldChange;
 import org.jabref.model.entry.BibEntry;
 import org.jabref.model.entry.field.Field;
 import org.jabref.model.entry.field.FieldFactory;
 import org.jabref.model.entry.field.InternalField;
 import org.jabref.model.entry.field.StandardField;
-import org.jabref.model.strings.StringUtil;
 
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +66,9 @@ public class FieldFormatterCleanups {
                 new FieldFormatterCleanup(StandardField.PAGES, new NormalizePagesFormatter()),
                 new FieldFormatterCleanup(StandardField.DATE, new NormalizeDateFormatter()),
                 new FieldFormatterCleanup(StandardField.MONTH, new NormalizeMonthFormatter()),
-                new FieldFormatterCleanup(InternalField.INTERNAL_ALL_TEXT_FIELDS_FIELD, new ReplaceUnicodeLigaturesFormatter()));
+                new FieldFormatterCleanup(InternalField.INTERNAL_ALL_TEXT_FIELDS_FIELD, new ReplaceUnicodeLigaturesFormatter()),
+                new FieldFormatterCleanup(StandardField.KEYWORDS, new ConvertMSCCodesFormatter()),
+                new FieldFormatterCleanup(StandardField.ISSN, new NormalizeIssn()));
 
         List<FieldFormatterCleanup> recommendedBibtexFormatters = new ArrayList<>(DEFAULT_SAVE_ACTIONS);
         recommendedBibtexFormatters.addAll(List.of(
@@ -82,9 +88,9 @@ public class FieldFormatterCleanups {
     private final boolean enabled;
     private final List<FieldFormatterCleanup> actions;
 
-    public FieldFormatterCleanups(boolean enabled, List<FieldFormatterCleanup> actions) {
+    public FieldFormatterCleanups(boolean enabled, @NonNull List<FieldFormatterCleanup> actions) {
         this.enabled = enabled;
-        this.actions = Objects.requireNonNull(actions);
+        this.actions = actions;
     }
 
     /**

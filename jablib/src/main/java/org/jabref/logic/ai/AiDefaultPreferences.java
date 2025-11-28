@@ -58,6 +58,8 @@ public class AiDefaultPreferences {
     public static final boolean ENABLE_CHAT = false;
     public static final boolean AUTO_GENERATE_EMBEDDINGS = false;
     public static final boolean AUTO_GENERATE_SUMMARIES = false;
+    public static final boolean GENERATE_FOLLOW_UP_QUESTIONS = true;
+    public static final int FOLLOW_UP_QUESTIONS_COUNT = 3;
 
     public static final AiProvider PROVIDER = AiProvider.OPEN_AI;
 
@@ -101,24 +103,34 @@ public class AiDefaultPreferences {
                     ${excerpt.text()}
                     #end""",
 
-            AiTemplate.SUMMARIZATION_CHUNK, """
-                Please provide an overview of the following text. It is a part of a scientific paper.
-                The summary should include the main objectives, methodologies used, key findings, and conclusions.
-                Mention any significant experiments, data, or discussions presented in the paper.
+            AiTemplate.SUMMARIZATION_CHUNK_SYSTEM_MESSAGE, """
+                    Please provide an overview of the following text. It is a part of a scientific paper.
+                    The summary should include the main objectives, methodologies used, key findings, and conclusions.
+                    Mention any significant experiments, data, or discussions presented in the paper.""",
 
-                DOCUMENT:
-                $text
+            AiTemplate.SUMMARIZATION_CHUNK_USER_MESSAGE, "$text",
 
-                OVERVIEW:""",
+            AiTemplate.SUMMARIZATION_COMBINE_SYSTEM_MESSAGE, """
+                    You have written an overview of a scientific paper. You have been collecting notes from various parts
+                    of the paper. Now your task is to combine all of the notes in one structured message.""",
 
-            AiTemplate.SUMMARIZATION_COMBINE, """
-                You have written an overview of a scientific paper. You have been collecting notes from various parts
-                of the paper. Now your task is to combine all of the notes in one structured message.
+            AiTemplate.SUMMARIZATION_COMBINE_USER_MESSAGE, "$chunks",
 
-                SUMMARIES:
-                $chunks
+            AiTemplate.CITATION_PARSING_SYSTEM_MESSAGE, "You are a bot to convert a plain text citation to a BibTeX entry. The user you talk to understands only BibTeX code, so provide it plainly without any wrappings.",
+            AiTemplate.CITATION_PARSING_USER_MESSAGE, "Please convert this plain text citation to a BibTeX entry:\n$citation\nIn your output, please provide only BibTeX code as your message.",
 
-                FINAL OVERVIEW:"""
+            AiTemplate.FOLLOW_UP_QUESTIONS, """
+                    Based on this conversation:
+                    User: $userMessage
+                    Assistant: $aiResponse
+
+                    Generate $count short follow-up questions (maximum 10 words each) that the user might want to ask next.
+                    Format your response as a numbered list:
+                    1. [question]
+                    2. [question]
+                    3. [question]
+
+                    Only provide the numbered list, nothing else."""
     );
 
     public static List<String> getAvailableModels(AiProvider aiProvider) {

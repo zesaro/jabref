@@ -1,6 +1,5 @@
 package org.jabref.gui.preferences;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.SequencedMap;
 import java.util.Set;
+import java.util.prefs.BackingStoreException;
 import java.util.stream.Collectors;
 
 import javafx.beans.InvalidationListener;
@@ -43,11 +43,10 @@ import org.jabref.gui.mergeentries.MergeDialogPreferences;
 import org.jabref.gui.newentry.NewEntryDialogTab;
 import org.jabref.gui.newentry.NewEntryPreferences;
 import org.jabref.gui.preview.PreviewPreferences;
-import org.jabref.gui.push.PushToApplicationPreferences;
-import org.jabref.gui.push.PushToApplications;
 import org.jabref.gui.sidepane.SidePaneType;
 import org.jabref.gui.specialfields.SpecialFieldsPreferences;
 import org.jabref.gui.theme.Theme;
+import org.jabref.logic.JabRefException;
 import org.jabref.logic.bst.BstPreviewLayout;
 import org.jabref.logic.citationstyle.CSLStyleLoader;
 import org.jabref.logic.citationstyle.CSLStyleUtils;
@@ -65,8 +64,8 @@ import org.jabref.logic.os.OS;
 import org.jabref.logic.preferences.AutoCompleteFirstNameMode;
 import org.jabref.logic.preferences.JabRefCliPreferences;
 import org.jabref.logic.preview.PreviewLayout;
-import org.jabref.logic.push.CitationCommandString;
 import org.jabref.logic.util.StandardFileType;
+import org.jabref.logic.util.strings.StringUtil;
 import org.jabref.model.entry.BibEntryTypesManager;
 import org.jabref.model.entry.field.Field;
 import org.jabref.model.entry.field.FieldFactory;
@@ -75,7 +74,6 @@ import org.jabref.model.entry.types.StandardEntryType;
 import org.jabref.model.groups.GroupHierarchyType;
 import org.jabref.model.metadata.SaveOrder;
 import org.jabref.model.metadata.SelfContainedSaveOrder;
-import org.jabref.model.strings.StringUtil;
 
 import com.airhacks.afterburner.injection.Injector;
 import com.tobiasdiez.easybind.EasyBind;
@@ -86,7 +84,6 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
 
     // Public because needed for pref migration
     public static final String AUTOCOMPLETER_COMPLETE_FIELDS = "autoCompleteFields";
-    public static final String MAIN_FONT_SIZE = "mainFontSize";
 
     // region Preview - public for pref migrations
     public static final String PREVIEW_STYLE = "previewStyle";
@@ -114,16 +111,30 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JabRefGuiPreferences.class);
 
+    // region WorkspacePreferences
+    private static final String OVERRIDE_DEFAULT_FONT_SIZE = "overrideDefaultFontSize";
+    private static final String MAIN_FONT_SIZE = "mainFontSize";
+    private static final String THEME = "fxTheme";
+    private static final String THEME_SYNC_OS = "themeSyncOs";
+    private static final String OPEN_LAST_EDITED = "openLastEdited";
+    private static final String SHOW_ADVANCED_HINTS = "showAdvancedHints";
+    private static final String CONFIRM_DELETE = "confirmDelete";
+    private static final String CONFIRM_HIDE_TAB_BAR = "confirmHideTabBar";
+    private static final String SELECTED_SLR_CATALOGS = "selectedSlrCatalogs";
+    // endregion
+
     // region core GUI preferences
     private static final String MAIN_WINDOW_POS_X = "mainWindowPosX";
     private static final String MAIN_WINDOW_POS_Y = "mainWindowPosY";
     private static final String MAIN_WINDOW_WIDTH = "mainWindowSizeX";
     private static final String MAIN_WINDOW_HEIGHT = "mainWindowSizeY";
-    private static final String WINDOW_MAXIMISED = "windowMaximised";
-    private static final String SIDE_PANE_WIDTH = "sidePaneWidthFX";
+    private static final String MAIN_WINDOW_MAXIMISED = "windowMaximised";
+    private static final String MAIN_WINDOW_SIDEPANE_WIDTH = "sidePaneWidthFX";
+    private static final String MAIN_WINDOW_EDITOR_HEIGHT = "entryEditorHeightFX";
+    // endregion
+
     private static final String SIDE_PANE_COMPONENT_PREFERRED_POSITIONS = "sidePaneComponentPreferredPositions";
     private static final String SIDE_PANE_COMPONENT_NAMES = "sidePaneComponentNames";
-    // endregion
 
     // region main table, main table columns, save columns
     private static final String AUTO_RESIZE_MODE = "autoResizeMode";
@@ -132,21 +143,6 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
     private static final String SEARCH_DIALOG_COLUMN_WIDTHS = "searchTableColumnWidths";
     private static final String SEARCH_DIALOG_COLUMN_SORT_TYPES = "searchDialogColumnSortTypes";
     private static final String SEARCH_DIALOG_COLUMN_SORT_ORDER = "searchDalogColumnSortOrder";
-    // endregion
-
-    // region Push to application preferences
-    private static final String PUSH_TO_APPLICATION = "pushToApplication";
-    private static final String PUSH_EMACS_PATH = "emacsPath";
-    private static final String PUSH_EMACS_ADDITIONAL_PARAMETERS = "emacsParameters";
-    private static final String PUSH_LYXPIPE = "lyxpipe";
-    private static final String PUSH_TEXSTUDIO_PATH = "TeXstudioPath";
-    private static final String PUSH_TEXWORKS_PATH = "TeXworksPath";
-    private static final String PUSH_WINEDT_PATH = "winEdtPath";
-    private static final String PUSH_TEXMAKER_PATH = "texmakerPath";
-    private static final String PUSH_VIM_SERVER = "vimServer";
-    private static final String PUSH_VIM = "vim";
-    private static final String PUSH_SUBLIME_TEXT_PATH = "sublimeTextPath";
-    private static final String PUSH_VSCODE_PATH = "VScodePath";
     // endregion
 
     // region NameDisplayPreferences
@@ -162,24 +158,11 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
     private static final String CONSOLE_COMMAND = "consoleCommand";
     private static final String USE_DEFAULT_CONSOLE_APPLICATION = "useDefaultConsoleApplication";
     private static final String USE_DEFAULT_FILE_BROWSER_APPLICATION = "userDefaultFileBrowserApplication";
-    private static final String CITE_COMMAND = "citeCommand";
     private static final String EMAIL_SUBJECT = "emailSubject";
     private static final String KINDLE_EMAIL = "kindleEmail";
     private static final String OPEN_FOLDERS_OF_ATTACHED_FILES = "openFoldersOfAttachedFiles";
     private static final String FILE_BROWSER_COMMAND = "fileBrowserCommand";
     // endregion
-
-    // region workspace
-    private static final String THEME = "fxTheme";
-    private static final String THEME_SYNC_OS = "themeSyncOs";
-    private static final String OPEN_LAST_EDITED = "openLastEdited";
-    private static final String OVERRIDE_DEFAULT_FONT_SIZE = "overrideDefaultFontSize";
-    private static final String SHOW_ADVANCED_HINTS = "showAdvancedHints";
-    private static final String CONFIRM_DELETE = "confirmDelete";
-    private static final String CONFIRM_HIDE_TAB_BAR = "confirmHideTabBar";
-    // endregion
-
-    private static final String ENTRY_EDITOR_HEIGHT = "entryEditorHeightFX";
 
     /**
      * Holds the horizontal divider position of the preview view when it is shown inside the entry editor
@@ -215,13 +198,17 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
     private static final String SPECIALFIELDSENABLED = "specialFieldsEnabled";
     // endregion
 
-    private static final String SELECTED_SLR_CATALOGS = "selectedSlrCatalogs";
     private static final String UNLINKED_FILES_SELECTED_EXTENSION = "unlinkedFilesSelectedExtension";
     private static final String UNLINKED_FILES_SELECTED_DATE_RANGE = "unlinkedFilesSelectedDateRange";
     private static final String UNLINKED_FILES_SELECTED_SORT = "unlinkedFilesSelectedSort";
 
     private static final String INCLUDE_CROSS_REFERENCES = "includeCrossReferences";
     private static final String ASK_FOR_INCLUDING_CROSS_REFERENCES = "askForIncludingCrossReferences";
+
+    // region Donation preferences
+    private static final String DONATION_NEVER_SHOW = "donationNeverShow";
+    private static final String DONATION_LAST_SHOWN_EPOCH_DAY = "donationLastShownEpochDay";
+    // endregion
 
     // region NewEntryPreferences
     private static final String CREATE_ENTRY_APPROACH = "latestApproach";
@@ -247,7 +234,6 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
     private GroupsPreferences groupsPreferences;
     private SpecialFieldsPreferences specialFieldsPreferences;
     private PreviewPreferences previewPreferences;
-    private PushToApplicationPreferences pushToApplicationPreferences;
     private NameDisplayPreferences nameDisplayPreferences;
     private MainTablePreferences mainTablePreferences;
     private ColumnPreferences mainTableColumnPreferences;
@@ -255,13 +241,13 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
     private KeyBindingRepository keyBindingRepository;
     private CopyToPreferences copyToPreferences;
     private NewEntryPreferences newEntryPreferences;
+    private DonationPreferences donationPreferences;
 
     private JabRefGuiPreferences() {
         super();
 
         defaults.put(JOURNAL_POPUP, EntryEditorPreferences.JournalPopupEnabled.FIRST_START.toString());
 
-        defaults.put(ENTRY_EDITOR_HEIGHT, 0.65);
         defaults.put(ENTRY_EDITOR_PREVIEW_DIVIDER_POS, 0.5);
 
         // region mergeDialogPreferences
@@ -282,17 +268,6 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
         defaults.put(AUTOCOMPLETER_COMPLETE_FIELDS, "author;editor;title;journal;publisher;keywords;crossref;related;entryset");
         // endregion
 
-        // region workspace
-        defaults.put(MAIN_FONT_SIZE, 9);
-        defaults.put(OVERRIDE_DEFAULT_FONT_SIZE, false);
-        defaults.put(OPEN_LAST_EDITED, Boolean.TRUE);
-        defaults.put(THEME, Theme.BASE_CSS);
-        defaults.put(THEME_SYNC_OS, Boolean.FALSE);
-        defaults.put(CONFIRM_DELETE, Boolean.TRUE);
-        defaults.put(CONFIRM_HIDE_TAB_BAR, Boolean.TRUE);
-        defaults.put(SHOW_ADVANCED_HINTS, Boolean.TRUE);
-        // endregion
-
         // region unlinkedFilesDialogPreferences
         defaults.put(UNLINKED_FILES_SELECTED_EXTENSION, StandardFileType.ANY_FILE.getName());
         defaults.put(UNLINKED_FILES_SELECTED_DATE_RANGE, DateRange.ALL_TIME.name());
@@ -301,7 +276,6 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
 
         // region ExternalApplicationsPreferences
         defaults.put(EXTERNAL_FILE_TYPES, "");
-        defaults.put(CITE_COMMAND, "\\cite{key1,key2}");
         defaults.put(EMAIL_SUBJECT, Localization.lang("References"));
         defaults.put(KINDLE_EMAIL, "");
 
@@ -374,29 +348,6 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
         defaults.put(NAMES_LAST_ONLY, Boolean.TRUE); // "Show last names only"
         // endregion
 
-        // region PushToApplicationPreferences
-        defaults.put(PUSH_TEXMAKER_PATH, OS.detectProgramPath("texmaker", "Texmaker"));
-        defaults.put(PUSH_WINEDT_PATH, OS.detectProgramPath("WinEdt", "WinEdt Team\\WinEdt"));
-        defaults.put(PUSH_TO_APPLICATION, "TeXstudio");
-        defaults.put(PUSH_TEXSTUDIO_PATH, OS.detectProgramPath("texstudio", "TeXstudio"));
-        defaults.put(PUSH_TEXWORKS_PATH, OS.detectProgramPath("texworks", "TeXworks"));
-        defaults.put(PUSH_SUBLIME_TEXT_PATH, OS.detectProgramPath("subl", "Sublime"));
-        defaults.put(PUSH_LYXPIPE, USER_HOME + File.separator + ".lyx/lyxpipe");
-        defaults.put(PUSH_VIM, "vim");
-        defaults.put(PUSH_VIM_SERVER, "vim");
-        defaults.put(PUSH_EMACS_ADDITIONAL_PARAMETERS, "-n -e");
-        defaults.put(PUSH_VSCODE_PATH, OS.detectProgramPath("Code", "Microsoft VS Code"));
-
-        if (OS.OS_X) {
-            defaults.put(PUSH_EMACS_PATH, "emacsclient");
-        } else if (OS.WINDOWS) {
-            defaults.put(PUSH_EMACS_PATH, "emacsclient.exe");
-        } else {
-            // Linux
-            defaults.put(PUSH_EMACS_PATH, "emacsclient");
-        }
-        // endregion
-
         // region: Main table, main table column, and search dialog column preferences
         defaults.put(EXTRA_FILE_COLUMNS, Boolean.FALSE);
         defaults.put(COLUMN_NAMES, "groups;group_icons;files;linked_id;field:citationkey;field:entrytype;field:author/editor;field:title;field:year;field:journal/booktitle;special:ranking;special:readstatus;special:priority");
@@ -404,19 +355,10 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
 
         defaults.put(SIDE_PANE_COMPONENT_NAMES, "");
         defaults.put(SIDE_PANE_COMPONENT_PREFERRED_POSITIONS, "");
-        defaults.put(SIDE_PANE_WIDTH, 0.15);
         // endregion
 
-        // region core GUI preferences
-        // Set DOI to be the default ID entry generator
-        defaults.put(MAIN_WINDOW_POS_X, 0);
-        defaults.put(MAIN_WINDOW_POS_Y, 0);
-        defaults.put(MAIN_WINDOW_WIDTH, 1024);
-        defaults.put(MAIN_WINDOW_HEIGHT, 768);
-        defaults.put(WINDOW_MAXIMISED, Boolean.TRUE);
         // By default disable "Fit table horizontally on the screen"
         defaults.put(AUTO_RESIZE_MODE, Boolean.FALSE);
-        // endregion
 
         defaults.put(ASK_FOR_INCLUDING_CROSS_REFERENCES, Boolean.TRUE);
         defaults.put(INCLUDE_CROSS_REFERENCES, Boolean.FALSE);
@@ -429,14 +371,14 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
         defaults.put(CREATE_ENTRY_IMMEDIATE_TYPE, StandardEntryType.Article.getDisplayName());
         defaults.put(CREATE_ENTRY_ID_LOOKUP_GUESSING, true);
         defaults.put(CREATE_ENTRY_ID_FETCHER_NAME, DoiFetcher.NAME);
-        defaults.put(CREATE_ENTRY_INTERPRET_PARSER_NAME, PlainCitationParserChoice.RULE_BASED.getLocalizedName());
+        defaults.put(CREATE_ENTRY_INTERPRET_PARSER_NAME, PlainCitationParserChoice.RULE_BASED_GENERAL.getLocalizedName());
         // endregion
     }
 
     /**
      * @deprecated Never ever add a call to this method. There should be only one caller.
-     *             All other usages should get the preferences passed (or injected).
-     *             The JabRef team leaves the {@code @deprecated} annotation to have IntelliJ listing this method with a strike-through.
+     * All other usages should get the preferences passed (or injected).
+     * The JabRef team leaves the {@code @deprecated} annotation to have IntelliJ listing this method with a strike-through.
      */
     @Deprecated
     public static JabRefGuiPreferences getInstance() {
@@ -461,6 +403,25 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
         return copyToPreferences;
     }
 
+    @Override
+    public void clear() throws BackingStoreException {
+        super.clear();
+
+        getWorkspacePreferences().setAll(WorkspacePreferences.getDefault());
+        getGuiPreferences().setAll(CoreGuiPreferences.getDefault());
+        getDonationPreferences().setAll(DonationPreferences.getDefault());
+    }
+
+    @Override
+    public void importPreferences(Path file) throws JabRefException {
+        super.importPreferences(file);
+
+        // in case of incomplete or corrupt xml fall back to current preferences
+        getWorkspacePreferences().setAll(getWorkspacePreferencesFromBackingStore(getWorkspacePreferences()));
+        getGuiPreferences().setAll(getCoreGuiPreferencesFromBackingStore(getGuiPreferences()));
+        getDonationPreferences().setAll(getDonationPreferencesFromBackingStore(getDonationPreferences()));
+    }
+
     // region EntryEditorPreferences
     public EntryEditorPreferences getEntryEditorPreferences() {
         if (entryEditorPreferences != null) {
@@ -475,6 +436,7 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
                 getBoolean(SHOW_AI_SUMMARY),
                 getBoolean(SHOW_AI_CHAT),
                 getBoolean(SHOW_LATEX_CITATIONS),
+                getBoolean(SMART_FILE_ANNOTATIONS),
                 getBoolean(DEFAULT_SHOW_SOURCE),
                 getBoolean(VALIDATE_IN_ENTRY_EDITOR),
                 getBoolean(ALLOW_INTEGER_EDITION_BIBTEX),
@@ -491,6 +453,7 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
         EasyBind.listen(entryEditorPreferences.shouldShowAiSummaryTabProperty(), (_, _, newValue) -> putBoolean(SHOW_AI_SUMMARY, newValue));
         EasyBind.listen(entryEditorPreferences.shouldShowAiChatTabProperty(), (_, _, newValue) -> putBoolean(SHOW_AI_CHAT, newValue));
         EasyBind.listen(entryEditorPreferences.shouldShowLatexCitationsTabProperty(), (_, _, newValue) -> putBoolean(SHOW_LATEX_CITATIONS, newValue));
+        EasyBind.listen(entryEditorPreferences.shouldShowFileAnnotationsTabProperty(), (_, _, newValue) -> putBoolean(SMART_FILE_ANNOTATIONS, newValue));
         EasyBind.listen(entryEditorPreferences.showSourceTabByDefaultProperty(), (_, _, newValue) -> putBoolean(DEFAULT_SHOW_SOURCE, newValue));
         EasyBind.listen(entryEditorPreferences.enableValidationProperty(), (_, _, newValue) -> putBoolean(VALIDATE_IN_ENTRY_EDITOR, newValue));
         EasyBind.listen(entryEditorPreferences.allowIntegerEditionBibtexProperty(), (_, _, newValue) -> putBoolean(ALLOW_INTEGER_EDITION_BIBTEX, newValue));
@@ -637,32 +600,35 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
         return autoCompletePreferences;
     }
 
-    // region (core) GUI preferences
+    // region core GUI preferences
     public CoreGuiPreferences getGuiPreferences() {
         if (coreGuiPreferences != null) {
             return coreGuiPreferences;
         }
 
-        coreGuiPreferences = new CoreGuiPreferences(
-                getDouble(MAIN_WINDOW_POS_X),
-                getDouble(MAIN_WINDOW_POS_Y),
-                getDouble(MAIN_WINDOW_WIDTH),
-                getDouble(MAIN_WINDOW_HEIGHT),
-                getBoolean(WINDOW_MAXIMISED),
-                getDouble(SIDE_PANE_WIDTH),
-                getDouble(ENTRY_EDITOR_HEIGHT));
+        coreGuiPreferences = getCoreGuiPreferencesFromBackingStore(CoreGuiPreferences.getDefault());
 
         EasyBind.listen(coreGuiPreferences.positionXProperty(), (_, _, newValue) -> putDouble(MAIN_WINDOW_POS_X, newValue.doubleValue()));
         EasyBind.listen(coreGuiPreferences.positionYProperty(), (_, _, newValue) -> putDouble(MAIN_WINDOW_POS_Y, newValue.doubleValue()));
         EasyBind.listen(coreGuiPreferences.sizeXProperty(), (_, _, newValue) -> putDouble(MAIN_WINDOW_WIDTH, newValue.doubleValue()));
         EasyBind.listen(coreGuiPreferences.sizeYProperty(), (_, _, newValue) -> putDouble(MAIN_WINDOW_HEIGHT, newValue.doubleValue()));
-        EasyBind.listen(coreGuiPreferences.windowMaximisedProperty(), (_, _, newValue) -> putBoolean(WINDOW_MAXIMISED, newValue));
-        EasyBind.listen(coreGuiPreferences.horizontalDividerPositionProperty(), (_, _, newValue) -> putDouble(SIDE_PANE_WIDTH, newValue.doubleValue()));
-        EasyBind.listen(coreGuiPreferences.getVerticalDividerPositionProperty(), (_, _, newValue) -> putDouble(ENTRY_EDITOR_HEIGHT, newValue.doubleValue()));
+        EasyBind.listen(coreGuiPreferences.windowMaximisedProperty(), (_, _, newValue) -> putBoolean(MAIN_WINDOW_MAXIMISED, newValue));
+        EasyBind.listen(coreGuiPreferences.horizontalDividerPositionProperty(), (_, _, newValue) -> putDouble(MAIN_WINDOW_SIDEPANE_WIDTH, newValue.doubleValue()));
+        EasyBind.listen(coreGuiPreferences.getVerticalDividerPositionProperty(), (_, _, newValue) -> putDouble(MAIN_WINDOW_EDITOR_HEIGHT, newValue.doubleValue()));
 
         return coreGuiPreferences;
     }
 
+    private CoreGuiPreferences getCoreGuiPreferencesFromBackingStore(CoreGuiPreferences defaults) {
+        return new CoreGuiPreferences(
+                getDouble(MAIN_WINDOW_POS_X, defaults.getPositionX()),
+                getDouble(MAIN_WINDOW_POS_Y, defaults.getPositionY()),
+                getDouble(MAIN_WINDOW_WIDTH, defaults.getSizeX()),
+                getDouble(MAIN_WINDOW_HEIGHT, defaults.getSizeY()),
+                getBoolean(MAIN_WINDOW_MAXIMISED, defaults.isWindowMaximised()),
+                getDouble(MAIN_WINDOW_SIDEPANE_WIDTH, defaults.getHorizontalDividerPosition()),
+                getDouble(MAIN_WINDOW_EDITOR_HEIGHT, defaults.getVerticalDividerPosition()));
+    }
     // endregion
 
     @Override
@@ -671,21 +637,9 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
             return workspacePreferences;
         }
 
-        workspacePreferences = new WorkspacePreferences(
-                getLanguage(),
-                getBoolean(OVERRIDE_DEFAULT_FONT_SIZE),
-                getInt(MAIN_FONT_SIZE),
-                (Integer) defaults.get(MAIN_FONT_SIZE),
-                new Theme(get(THEME)),
-                getBoolean(THEME_SYNC_OS),
-                getBoolean(OPEN_LAST_EDITED),
-                getBoolean(SHOW_ADVANCED_HINTS),
-                getBoolean(WARN_ABOUT_DUPLICATES_IN_INSPECTION),
-                getBoolean(CONFIRM_DELETE),
-                getBoolean(CONFIRM_HIDE_TAB_BAR),
-                getStringList(SELECTED_SLR_CATALOGS));
+        workspacePreferences = getWorkspacePreferencesFromBackingStore(WorkspacePreferences.getDefault());
 
-        EasyBind.listen(workspacePreferences.languageProperty(), (obs, oldValue, newValue) -> {
+        EasyBind.listen(workspacePreferences.languageProperty(), (_, oldValue, newValue) -> {
             put(LANGUAGE, newValue.getId());
             if (oldValue != newValue) {
                 setLanguageDependentDefaultValues();
@@ -693,18 +647,40 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
             }
         });
 
-        EasyBind.listen(workspacePreferences.shouldOverrideDefaultFontSizeProperty(), (obs, oldValue, newValue) -> putBoolean(OVERRIDE_DEFAULT_FONT_SIZE, newValue));
-        EasyBind.listen(workspacePreferences.mainFontSizeProperty(), (obs, oldValue, newValue) -> putInt(MAIN_FONT_SIZE, newValue));
-        EasyBind.listen(workspacePreferences.themeProperty(), (obs, oldValue, newValue) -> put(THEME, newValue.getName()));
-        EasyBind.listen(workspacePreferences.themeSyncOsProperty(), (obs, oldValue, newValue) -> putBoolean(THEME_SYNC_OS, newValue));
-        EasyBind.listen(workspacePreferences.openLastEditedProperty(), (obs, oldValue, newValue) -> putBoolean(OPEN_LAST_EDITED, newValue));
-        EasyBind.listen(workspacePreferences.showAdvancedHintsProperty(), (obs, oldValue, newValue) -> putBoolean(SHOW_ADVANCED_HINTS, newValue));
-        EasyBind.listen(workspacePreferences.warnAboutDuplicatesInInspectionProperty(), (obs, oldValue, newValue) -> putBoolean(WARN_ABOUT_DUPLICATES_IN_INSPECTION, newValue));
-        EasyBind.listen(workspacePreferences.confirmDeleteProperty(), (obs, oldValue, newValue) -> putBoolean(CONFIRM_DELETE, newValue));
-        EasyBind.listen(workspacePreferences.hideTabBarProperty(), (obs, oldValue, newValue) -> putBoolean(CONFIRM_HIDE_TAB_BAR, newValue));
-        workspacePreferences.getSelectedSlrCatalogs().addListener((ListChangeListener<String>) change ->
+        EasyBind.listen(workspacePreferences.shouldOverrideDefaultFontSizeProperty(), (_, _, newValue) ->
+                putBoolean(OVERRIDE_DEFAULT_FONT_SIZE, newValue));
+        EasyBind.listen(workspacePreferences.mainFontSizeProperty(), (_, _, newValue) ->
+                putInt(MAIN_FONT_SIZE, newValue));
+        EasyBind.listen(workspacePreferences.themeProperty(), (_, _, newValue) ->
+                put(THEME, newValue.getName()));
+        EasyBind.listen(workspacePreferences.themeSyncOsProperty(), (_, _, newValue) ->
+                putBoolean(THEME_SYNC_OS, newValue));
+        EasyBind.listen(workspacePreferences.openLastEditedProperty(), (_, _, newValue) ->
+                putBoolean(OPEN_LAST_EDITED, newValue));
+        EasyBind.listen(workspacePreferences.showAdvancedHintsProperty(), (_, _, newValue) ->
+                putBoolean(SHOW_ADVANCED_HINTS, newValue));
+        EasyBind.listen(workspacePreferences.confirmDeleteProperty(), (_, _, newValue) ->
+                putBoolean(CONFIRM_DELETE, newValue));
+        EasyBind.listen(workspacePreferences.hideTabBarProperty(), (_, _, newValue) ->
+                putBoolean(CONFIRM_HIDE_TAB_BAR, newValue));
+        workspacePreferences.getSelectedSlrCatalogs().addListener((ListChangeListener<String>) _ ->
                 putStringList(SELECTED_SLR_CATALOGS, workspacePreferences.getSelectedSlrCatalogs()));
         return workspacePreferences;
+    }
+
+    private WorkspacePreferences getWorkspacePreferencesFromBackingStore(WorkspacePreferences defaults) {
+        return new WorkspacePreferences(
+                getLanguage(),
+                getBoolean(OVERRIDE_DEFAULT_FONT_SIZE, defaults.shouldOverrideDefaultFontSize()),
+                getInt(MAIN_FONT_SIZE, defaults.getMainFontSize()),
+                defaults.getDefaultFontSize(), // FixMe
+                new Theme(get(THEME, Theme.BASE_CSS)),
+                getBoolean(THEME_SYNC_OS, defaults.shouldThemeSyncOs()),
+                getBoolean(OPEN_LAST_EDITED, defaults.shouldOpenLastEdited()),
+                getBoolean(SHOW_ADVANCED_HINTS, defaults.shouldShowAdvancedHints()),
+                getBoolean(CONFIRM_DELETE, defaults.shouldConfirmDelete()),
+                getBoolean(CONFIRM_HIDE_TAB_BAR, defaults.shouldHideTabBar()),
+                getStringList(SELECTED_SLR_CATALOGS));
     }
 
     @Override
@@ -812,8 +788,6 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
         externalApplicationsPreferences = new ExternalApplicationsPreferences(
                 get(EMAIL_SUBJECT),
                 getBoolean(OPEN_FOLDERS_OF_ATTACHED_FILES),
-                CitationCommandString.from(get(CITE_COMMAND)),
-                CitationCommandString.from((String) defaults.get(CITE_COMMAND)),
                 ExternalFileTypes.fromString(get(EXTERNAL_FILE_TYPES)),
                 !getBoolean(USE_DEFAULT_CONSOLE_APPLICATION), // mind the !
                 get(CONSOLE_COMMAND),
@@ -825,8 +799,6 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
                 (obs, oldValue, newValue) -> put(EMAIL_SUBJECT, newValue));
         EasyBind.listen(externalApplicationsPreferences.autoOpenEmailAttachmentsFolderProperty(),
                 (obs, oldValue, newValue) -> putBoolean(OPEN_FOLDERS_OF_ATTACHED_FILES, newValue));
-        EasyBind.listen(externalApplicationsPreferences.citeCommandProperty(),
-                (obs, oldValue, newValue) -> put(CITE_COMMAND, newValue.toString()));
         EasyBind.listen(externalApplicationsPreferences.useCustomTerminalProperty(),
                 (obs, oldValue, newValue) -> putBoolean(USE_DEFAULT_CONSOLE_APPLICATION, !newValue)); // mind the !
         externalApplicationsPreferences.getExternalFileTypes().addListener((SetChangeListener<ExternalFileType>) c ->
@@ -970,67 +942,6 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
             return 0; // fallback if stored position is no longer valid
         }
     }
-    // endregion
-
-    // region PushToApplicationPreferences
-
-    public PushToApplicationPreferences getPushToApplicationPreferences() {
-        if (pushToApplicationPreferences != null) {
-            return pushToApplicationPreferences;
-        }
-
-        Map<String, String> applicationCommands = new HashMap<>();
-        // getEmptyIsDefault is used to ensure that an installation of a tool leads to the new path (instead of leaving the empty one)
-        // Reason: empty string is returned by org.jabref.gui.desktop.os.Windows.detectProgramPath if program is not found. That path is stored in the preferences.
-        applicationCommands.put(PushToApplications.EMACS, getEmptyIsDefault(PUSH_EMACS_PATH));
-        applicationCommands.put(PushToApplications.LYX, getEmptyIsDefault(PUSH_LYXPIPE));
-        applicationCommands.put(PushToApplications.TEXMAKER, getEmptyIsDefault(PUSH_TEXMAKER_PATH));
-        applicationCommands.put(PushToApplications.TEXSTUDIO, getEmptyIsDefault(PUSH_TEXSTUDIO_PATH));
-        applicationCommands.put(PushToApplications.TEXWORKS, getEmptyIsDefault(PUSH_TEXWORKS_PATH));
-        applicationCommands.put(PushToApplications.VIM, getEmptyIsDefault(PUSH_VIM));
-        applicationCommands.put(PushToApplications.WIN_EDT, getEmptyIsDefault(PUSH_WINEDT_PATH));
-        applicationCommands.put(PushToApplications.SUBLIME_TEXT, getEmptyIsDefault(PUSH_SUBLIME_TEXT_PATH));
-        applicationCommands.put(PushToApplications.VSCODE, getEmptyIsDefault(PUSH_VSCODE_PATH));
-
-        pushToApplicationPreferences = new PushToApplicationPreferences(
-                get(PUSH_TO_APPLICATION),
-                applicationCommands,
-                get(PUSH_EMACS_ADDITIONAL_PARAMETERS),
-                get(PUSH_VIM_SERVER)
-        );
-
-        EasyBind.listen(pushToApplicationPreferences.activeApplicationNameProperty(), (obs, oldValue, newValue) -> put(PUSH_TO_APPLICATION, newValue));
-        pushToApplicationPreferences.getCommandPaths().addListener((obs, oldValue, newValue) -> storePushToApplicationPath(newValue));
-        EasyBind.listen(pushToApplicationPreferences.emacsArgumentsProperty(), (obs, oldValue, newValue) -> put(PUSH_EMACS_ADDITIONAL_PARAMETERS, newValue));
-        EasyBind.listen(pushToApplicationPreferences.vimServerProperty(), (obs, oldValue, newValue) -> put(PUSH_VIM_SERVER, newValue));
-        return pushToApplicationPreferences;
-    }
-
-    private void storePushToApplicationPath(Map<String, String> commandPair) {
-        commandPair.forEach((key, value) -> {
-            switch (key) {
-                case PushToApplications.EMACS ->
-                        put(PUSH_EMACS_PATH, value);
-                case PushToApplications.LYX ->
-                        put(PUSH_LYXPIPE, value);
-                case PushToApplications.TEXMAKER ->
-                        put(PUSH_TEXMAKER_PATH, value);
-                case PushToApplications.TEXSTUDIO ->
-                        put(PUSH_TEXSTUDIO_PATH, value);
-                case PushToApplications.TEXWORKS ->
-                        put(PUSH_TEXWORKS_PATH, value);
-                case PushToApplications.VIM ->
-                        put(PUSH_VIM, value);
-                case PushToApplications.WIN_EDT ->
-                        put(PUSH_WINEDT_PATH, value);
-                case PushToApplications.SUBLIME_TEXT ->
-                        put(PUSH_SUBLIME_TEXT_PATH, value);
-                case PushToApplications.VSCODE ->
-                        put(PUSH_VSCODE_PATH, value);
-            }
-        });
-    }
-
     // endregion
 
     // region NameDisplayPreferences
@@ -1264,8 +1175,8 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
 
         final int approachIndex = getInt(CREATE_ENTRY_APPROACH);
         NewEntryDialogTab approach = NewEntryDialogTab.values().length > approachIndex
-            ? NewEntryDialogTab.values()[approachIndex]
-            : NewEntryDialogTab.values()[0];
+                                     ? NewEntryDialogTab.values()[approachIndex]
+                                     : NewEntryDialogTab.values()[0];
 
         final String immediateTypeName = get(CREATE_ENTRY_IMMEDIATE_TYPE);
         EntryType immediateType = StandardEntryType.Article;
@@ -1277,14 +1188,14 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
         }
 
         newEntryPreferences = new NewEntryPreferences(
-            approach,
-            getBoolean(CREATE_ENTRY_EXPAND_RECOMMENDED),
-            getBoolean(CREATE_ENTRY_EXPAND_OTHER),
-            getBoolean(CREATE_ENTRY_EXPAND_CUSTOM),
-            immediateType,
-            getBoolean(CREATE_ENTRY_ID_LOOKUP_GUESSING),
-            get(CREATE_ENTRY_ID_FETCHER_NAME),
-            get(CREATE_ENTRY_INTERPRET_PARSER_NAME));
+                approach,
+                getBoolean(CREATE_ENTRY_EXPAND_RECOMMENDED),
+                getBoolean(CREATE_ENTRY_EXPAND_OTHER),
+                getBoolean(CREATE_ENTRY_EXPAND_CUSTOM),
+                immediateType,
+                getBoolean(CREATE_ENTRY_ID_LOOKUP_GUESSING),
+                get(CREATE_ENTRY_ID_FETCHER_NAME),
+                get(CREATE_ENTRY_INTERPRET_PARSER_NAME));
 
         EasyBind.listen(newEntryPreferences.latestApproachProperty(), (_, _, newValue) -> putInt(CREATE_ENTRY_APPROACH, List.of(NewEntryDialogTab.values()).indexOf(newValue)));
         EasyBind.listen(newEntryPreferences.typesRecommendedExpandedProperty(), (_, _, newValue) -> putBoolean(CREATE_ENTRY_EXPAND_RECOMMENDED, newValue));
@@ -1297,6 +1208,26 @@ public class JabRefGuiPreferences extends JabRefCliPreferences implements GuiPre
 
         return newEntryPreferences;
     }
+
+    // region Donation preferences
+    public DonationPreferences getDonationPreferences() {
+        if (donationPreferences != null) {
+            return donationPreferences;
+        }
+
+        donationPreferences = getDonationPreferencesFromBackingStore(DonationPreferences.getDefault());
+
+        EasyBind.listen(donationPreferences.neverShowAgainProperty(), (_, _, newValue) -> putBoolean(DONATION_NEVER_SHOW, newValue));
+        EasyBind.listen(donationPreferences.lastShownEpochDayProperty(), (_, _, newValue) -> putInt(DONATION_LAST_SHOWN_EPOCH_DAY, newValue.intValue()));
+        return donationPreferences;
+    }
+
+    private DonationPreferences getDonationPreferencesFromBackingStore(DonationPreferences defaults) {
+        return new DonationPreferences(
+                getBoolean(DONATION_NEVER_SHOW, defaults.isNeverShowAgain()),
+                getInt(DONATION_LAST_SHOWN_EPOCH_DAY, defaults.getLastShownEpochDay()));
+    }
+    // endregion
 
     /**
      * In GUI mode, we can lookup the directory better

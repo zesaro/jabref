@@ -2,7 +2,6 @@ package org.jabref.logic.cleanup;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import org.jabref.logic.FilePreferences;
 import org.jabref.logic.JabRefException;
@@ -11,8 +10,13 @@ import org.jabref.model.FieldChange;
 import org.jabref.model.database.BibDatabaseContext;
 import org.jabref.model.entry.BibEntry;
 
+import org.jspecify.annotations.NonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class CleanupWorker {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CleanupWorker.class);
     private final BibDatabaseContext databaseContext;
     private final FilePreferences filePreferences;
     private final TimestampPreferences timestampPreferences;
@@ -25,10 +29,7 @@ public class CleanupWorker {
         this.failures = new ArrayList<>();
     }
 
-    public List<FieldChange> cleanup(CleanupPreferences preset, BibEntry entry) {
-        Objects.requireNonNull(preset);
-        Objects.requireNonNull(entry);
-
+    public List<FieldChange> cleanup(@NonNull CleanupPreferences preset, @NonNull BibEntry entry) {
         List<CleanupJob> jobs = determineCleanupActions(preset);
         List<FieldChange> changes = new ArrayList<>();
         for (CleanupJob job : jobs) {
@@ -44,6 +45,7 @@ public class CleanupWorker {
     private List<CleanupJob> determineCleanupActions(CleanupPreferences preset) {
         List<CleanupJob> jobs = new ArrayList<>();
 
+        // Add active jobs from preset panel
         for (CleanupPreferences.CleanupStep action : preset.getActiveJobs()) {
             jobs.add(toJob(action));
         }
@@ -85,8 +87,6 @@ public class CleanupWorker {
                     new MoveFilesCleanup(() -> databaseContext, filePreferences);
             case FIX_FILE_LINKS ->
                     new FileLinksCleanup();
-            case CLEAN_UP_ISSN ->
-                    new ISSNCleanup();
             default ->
                     throw new UnsupportedOperationException(action.name());
         };

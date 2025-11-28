@@ -1,13 +1,16 @@
 package org.jabref.gui.groups;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Optional;
 
 import org.jabref.gui.DialogService;
+import org.jabref.gui.JabRefGuiStateManager;
 import org.jabref.gui.StateManager;
 import org.jabref.gui.entryeditor.AdaptVisibleTabs;
 import org.jabref.gui.preferences.GuiPreferences;
 import org.jabref.gui.util.CustomLocalDragboard;
+import org.jabref.logic.LibraryPreferences;
 import org.jabref.logic.ai.AiService;
 import org.jabref.logic.util.CurrentThreadTaskExecutor;
 import org.jabref.logic.util.TaskExecutor;
@@ -42,12 +45,19 @@ class GroupTreeViewModelTest {
     @BeforeEach
     void setUp() {
         databaseContext = new BibDatabaseContext();
-        stateManager = new StateManager();
+        stateManager = new JabRefGuiStateManager();
         stateManager.activeDatabaseProperty().setValue(Optional.of(databaseContext));
         taskExecutor = new CurrentThreadTaskExecutor();
         preferences = mock(GuiPreferences.class);
         dialogService = mock(DialogService.class, Answers.RETURNS_DEEP_STUBS);
 
+        when(preferences.getLibraryPreferences()).thenReturn(new LibraryPreferences(
+                databaseContext.getMode(),
+                false,
+                false,
+                false,
+                "Imported entries"
+        ));
         when(preferences.getGroupsPreferences()).thenReturn(new GroupsPreferences(
                 EnumSet.noneOf(GroupViewMode.class),
                 true,
@@ -184,5 +194,28 @@ class GroupTreeViewModelTest {
 
         assertEquals(2, rootGroup.getChildren().size());
         assertTrue(rootGroup.hasAllSuggestedGroups());
+    }
+
+    @Test
+    void shouldCreateImportedEntriesGroupWhenEnabled() {
+        preferences.getLibraryPreferences().setAddImportedEntries(true);
+
+        List<GroupNodeViewModel> prevModel = groupTree.rootGroupProperty().getValue().getChildren();
+        GroupTreeViewModel model = new GroupTreeViewModel(stateManager, dialogService, mock(AiService.class), preferences, mock(AdaptVisibleTabs.class), taskExecutor, new CustomLocalDragboard());
+        String actualGrpName = model.rootGroupProperty().getValue().getChildren().getFirst().getDisplayName();
+
+        assertEquals(0, prevModel.size());
+        assertEquals("Imported entries", actualGrpName);
+    }
+
+    @Test
+    void shouldReflectUpdatedNameForImportedEntriesGroup() {
+        preferences.getLibraryPreferences().setAddImportedEntries(true);
+        preferences.getLibraryPreferences().setAddImportedEntriesGroupName("Review list");
+
+        GroupTreeViewModel model = new GroupTreeViewModel(stateManager, dialogService, mock(AiService.class), preferences, mock(AdaptVisibleTabs.class), taskExecutor, new CustomLocalDragboard());
+        String actualGrpName = model.rootGroupProperty().getValue().getChildren().getFirst().getDisplayName();
+
+        assertEquals("Review list", actualGrpName);
     }
 }

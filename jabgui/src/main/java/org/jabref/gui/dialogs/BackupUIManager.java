@@ -20,7 +20,7 @@ import org.jabref.gui.collab.DatabaseChangeResolverFactory;
 import org.jabref.gui.collab.DatabaseChangesResolverDialog;
 import org.jabref.gui.frame.ExternalApplicationsPreferences;
 import org.jabref.gui.preferences.GuiPreferences;
-import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.NamedCompoundEdit;
 import org.jabref.gui.util.UiTaskExecutor;
 import org.jabref.logic.importer.ImportFormatPreferences;
 import org.jabref.logic.importer.OpenDatabase;
@@ -92,7 +92,7 @@ public class BackupUIManager {
             Path backupPath = BackupFileUtil.getPathOfLatestExistingBackupFile(originalPath, BackupFileType.BACKUP, preferences.getFilePreferences().getBackupDirectory()).orElseThrow();
             BibDatabaseContext backupDatabase = OpenDatabase.loadDatabase(backupPath, importFormatPreferences, new DummyFileUpdateMonitor()).getDatabaseContext();
 
-            DatabaseChangeResolverFactory changeResolverFactory = new DatabaseChangeResolverFactory(dialogService, originalDatabase, preferences);
+            DatabaseChangeResolverFactory changeResolverFactory = new DatabaseChangeResolverFactory(dialogService, originalDatabase, preferences, stateManager);
 
             return UiTaskExecutor.runInJavaFXThread(() -> {
                 List<DatabaseChange> changes = DatabaseChangeList.compareAndGetChanges(originalDatabase, backupDatabase, changeResolverFactory);
@@ -102,7 +102,7 @@ public class BackupUIManager {
                 );
                 Optional<Boolean> allChangesResolved = dialogService.showCustomDialogAndWait(reviewBackupDialog);
                 LibraryTab saveState = stateManager.activeTabProperty().get().get();
-                final NamedCompound CE = new NamedCompound(Localization.lang("Merged external changes"));
+                final NamedCompoundEdit CE = new NamedCompoundEdit(Localization.lang("Merged external changes"));
                 changes.stream().filter(DatabaseChange::isAccepted).forEach(change -> change.applyChange(CE));
                 CE.end();
                 undoManager.addEdit(CE);

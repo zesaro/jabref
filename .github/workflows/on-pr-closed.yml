@@ -9,8 +9,9 @@ jobs:
     name: Determine issue number
     runs-on: ubuntu-latest
     if: >
+      (github.repository == 'JabRef/jabref') &&
       !(
-        (github.actor == 'dependabot[bot]') ||
+        (github.event.pull_request.user.login == 'dependabot[bot]') ||
         (
           startsWith(github.event.pull_request.title, '[Bot] ') ||
           startsWith(github.event.pull_request.title, 'Bump ') ||
@@ -24,12 +25,16 @@ jobs:
       issue_number: ${{ steps.get_issue_number.outputs.ticketNumber }}
     steps:
       - name: echo PR data
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          echo "PR Number: ${{ github.event.pull_request.number }}"
-          echo "PR URL: ${{ github.event.pull_request.html_url }}"
+          echo "PR Number: $PR_NUMBER"
+          echo "PR URL: $PR_URL"
           cat <<EOF
           PR Body:
-          ${{ github.event.pull_request.body }}
+          $PR_BODY
           EOF
       - name: Determine issue number
         id: get_issue_number
@@ -40,8 +45,8 @@ jobs:
           ticketPrefix: '#'
           titleRegex: '^#(?<ticketNumber>\d+)'
           branchRegex: '^(?<ticketNumber>\d+)'
-          # Matches GitHub's closes/fixes/resolves #{number}, but does not match our example `Closes #12345` in PULL_REQUEST_TEMPLATE
-          bodyRegex: '(?<action>fixes|closes|resolves)\s+(?:https?:\/\/github\.com\/JabRef\/jabref\/issues\/)?#?(?<ticketNumber>(?!12345\b)\d+)'
+          # Matches GitHub's closes/fixes/resolves #{number}, but does not match our example `Closes #13109` in PULL_REQUEST_TEMPLATE
+          bodyRegex: '(?<action>fixes|closes|resolves)\s+(?:https?:\/\/github\.com\/JabRef\/jabref\/issues\/)?#?(?<ticketNumber>(?!13109\b)\d+)'
           bodyRegexFlags: 'i'
           outputOnly: true
       - run: echo "${{ steps.get_issue_number.outputs.ticketNumber }}"
@@ -56,7 +61,7 @@ jobs:
       contents: read
       issues: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Remove assignee
         run: |
           # "brute force" remove assignee - it might happen that the contributor was unassinged, but the PR closed later; therefore we need " || true" to ignore any error
@@ -88,7 +93,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Move issue to "Free to take" in "Good First Issues"
         if: steps.check_assignee.outputs.assigned == 'no'
-        uses: m7kvqbe1/github-action-move-issues/@add-issue-parameter
+        uses: m7kvqbe1/github-action-move-issues/@main
         with:
           github-token: ${{ secrets.GH_TOKEN_ACTION_MOVE_ISSUE }}
           project-url: "https://github.com/orgs/JabRef/projects/5"
@@ -100,7 +105,7 @@ jobs:
           skip-if-not-in-project: true
       - name: Move issue to "Free to take" in "Candidates for University Projects"
         if: steps.check_assignee.outputs.assigned == 'no'
-        uses: m7kvqbe1/github-action-move-issues/@add-issue-parameter
+        uses: m7kvqbe1/github-action-move-issues/@main
         with:
           github-token: ${{ secrets.GH_TOKEN_ACTION_MOVE_ISSUE }}
           project-url: "https://github.com/orgs/JabRef/projects/3"

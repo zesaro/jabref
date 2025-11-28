@@ -1,5 +1,7 @@
 open module org.jabref {
     requires org.jabref.jablib;
+    requires org.jabref.jabls;
+    requires org.jabref.jabsrv;
 
     // Swing
     requires java.desktop;
@@ -10,10 +12,11 @@ open module org.jabref {
 
     // region JavaFX
     requires javafx.base;
-    requires javafx.graphics;
     requires javafx.controls;
-    requires javafx.web;
     requires javafx.fxml;
+    requires javafx.graphics;
+    requires javafx.web;
+
     requires com.tobiasdiez.easybind;
 
     requires afterburner.fx;
@@ -56,7 +59,7 @@ open module org.jabref {
     // endregion
 
     provides org.tinylog.writers.Writer
-    with org.jabref.gui.logging.GuiWriter;
+            with org.jabref.gui.logging.GuiWriter;
 
     // Preferences and XML
     requires java.prefs;
@@ -81,14 +84,9 @@ open module org.jabref {
     // endregion
 
     // region: data mapping
-    // requires jakarta.xml.bind;
     requires jdk.xml.dom;
     // requires com.google.gson;
-    // requires com.fasterxml.jackson.databind;
-    // requires com.fasterxml.jackson.dataformat.yaml;
-    // requires com.fasterxml.jackson.datatype.jsr310;
-    // needs to be loaded here as it's otherwise not found at runtime
-    // requires org.glassfish.jaxb.runtime;
+    requires tools.jackson.databind;
     // endregion
 
     // dependency injection using HK2
@@ -135,10 +133,10 @@ open module org.jabref {
     // requires org.apache.xmpbox;
     // requires com.ibm.icu;
 
-    // requires flexmark;
+    requires flexmark;
     requires flexmark.html2md.converter;
-    // requires flexmark.util.ast;
-    // requires flexmark.util.data;
+    requires flexmark.util.ast;
+    requires flexmark.util.data;
 
     // requires com.h2database.mvstore;
 
@@ -161,7 +159,7 @@ open module org.jabref {
     // uses ai.djl.engine.EngineProvider;
     // uses ai.djl.repository.RepositoryFactory;
     // uses ai.djl.repository.zoo.ZooProvider;
-    // uses dev.langchain4j.spi.prompt.PromptTemplateFactory;
+    // uses langchain4j.spi.prompt.PromptTemplateFactory;
     // requires velocity.engine.core;
     // endregion
 
@@ -169,7 +167,7 @@ open module org.jabref {
     /*
      * In case the version is updated, please also increment {@link org.jabref.model.search.LinkedFilesConstants.VERSION} to trigger reindexing.
      */
-    uses org.apache.lucene.codecs.lucene101.Lucene101Codec;
+    uses org.apache.lucene.codecs.lucene103.Lucene103Codec;
     requires org.apache.lucene.analysis.common;
     requires org.apache.lucene.core;
     requires org.apache.lucene.highlighter;
@@ -185,11 +183,14 @@ open module org.jabref {
     // uses org.eclipse.jgit.lib.Signer;
 
     requires transitive org.jspecify;
+    requires io.github.adr;
 
     // region: other libraries (alphabetically)
     // requires cuid;
+    requires com.dlsc.pdfviewfx;
+    requires com.pixelduke.fxthemes;
+    // requires com.sun.jna;
     // requires dd.plist;
-    requires io.github.adr;
     // required by okhttp and some AI library
     // requires kotlin.stdlib;
     // requires mslinks;

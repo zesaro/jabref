@@ -15,7 +15,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.stage.Screen;
 import javafx.util.Callback;
 
-import org.jabref.model.strings.StringUtil;
+import org.jabref.logic.util.strings.StringUtil;
 
 /**
  * Constructs a {@link TableCell} based on the value of the cell and a bunch of specified converter methods.
@@ -141,7 +141,10 @@ public class ValueTableCellFactory<S, T> implements Callback<TableColumn<S, T>, 
                     }
 
                     setOnMouseEntered(event -> {
-                        if (tooltip != null) {
+                        int rowIndex = getTableRow().getIndex();
+                        int totalItems = getTableView().getItems().size();
+                        // tooltip is != null even for empty lines. Not easy to fix, therefore, there is a check if the current line is a real entry
+                        if (tooltip != null && rowIndex < totalItems) {
                             setTooltip(tooltip.apply(rowItem, item));
                         }
                     });

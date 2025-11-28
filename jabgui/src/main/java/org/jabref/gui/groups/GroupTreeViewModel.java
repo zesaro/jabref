@@ -37,15 +37,18 @@ import org.jabref.model.groups.AbstractGroup;
 import org.jabref.model.groups.AutomaticKeywordGroup;
 import org.jabref.model.groups.AutomaticPersonsGroup;
 import org.jabref.model.groups.ExplicitGroup;
+import org.jabref.model.groups.GroupHierarchyType;
 import org.jabref.model.groups.GroupTreeNode;
 import org.jabref.model.groups.RegexKeywordGroup;
 import org.jabref.model.groups.SearchGroup;
+import org.jabref.model.groups.SmartGroup;
 import org.jabref.model.groups.TexGroup;
 import org.jabref.model.groups.WordKeywordGroup;
 import org.jabref.model.metadata.MetaData;
 
 import com.tobiasdiez.easybind.EasyBind;
 import dev.langchain4j.data.message.ChatMessage;
+import org.jspecify.annotations.NonNull;
 
 public class GroupTreeViewModel extends AbstractViewModel {
 
@@ -78,21 +81,21 @@ public class GroupTreeViewModel extends AbstractViewModel {
     };
     private Optional<BibDatabaseContext> currentDatabase = Optional.empty();
 
-    public GroupTreeViewModel(StateManager stateManager,
-                              DialogService dialogService,
-                              AiService aiService,
-                              GuiPreferences preferences,
-                              AdaptVisibleTabs adaptVisibleTabs,
-                              TaskExecutor taskExecutor,
-                              CustomLocalDragboard localDragboard
+    public GroupTreeViewModel(@NonNull StateManager stateManager,
+                              @NonNull DialogService dialogService,
+                              @NonNull AiService aiService,
+                              @NonNull GuiPreferences preferences,
+                              @NonNull AdaptVisibleTabs adaptVisibleTabs,
+                              @NonNull TaskExecutor taskExecutor,
+                              @NonNull CustomLocalDragboard localDragboard
     ) {
-        this.stateManager = Objects.requireNonNull(stateManager);
-        this.dialogService = Objects.requireNonNull(dialogService);
-        this.aiService = Objects.requireNonNull(aiService);
-        this.preferences = Objects.requireNonNull(preferences);
+        this.stateManager = stateManager;
+        this.dialogService = dialogService;
+        this.aiService = aiService;
+        this.preferences = preferences;
         this.adaptVisibleTabs = adaptVisibleTabs;
-        this.taskExecutor = Objects.requireNonNull(taskExecutor);
-        this.localDragboard = Objects.requireNonNull(localDragboard);
+        this.taskExecutor = taskExecutor;
+        this.localDragboard = localDragboard;
 
         // Register listener
         EasyBind.subscribe(stateManager.activeDatabaseProperty(), this::onActiveDatabaseChanged);
@@ -176,6 +179,29 @@ public class GroupTreeViewModel extends AbstractViewModel {
             rootGroup.setValue(null);
         }
         currentDatabase = newDatabase;
+        newDatabase.ifPresent(db -> addGroupImportEntries(rootGroup.get()));
+    }
+
+    private void addGroupImportEntries(GroupNodeViewModel parent) {
+        if (!preferences.getLibraryPreferences().isAddImportedEntriesEnabled()) {
+            return;
+        }
+
+        String grpName = preferences.getLibraryPreferences().getAddImportedEntriesGroupName();
+        AbstractGroup importEntriesGroup = new SmartGroup(grpName, GroupHierarchyType.INDEPENDENT, ',');
+        boolean isGrpExist = parent.getGroupNode()
+                                   .getChildren()
+                                   .stream()
+                                   .map(GroupTreeNode::getGroup)
+                                   .anyMatch(grp -> grp instanceof SmartGroup);
+        if (!isGrpExist) {
+            currentDatabase.ifPresent(db -> {
+                GroupTreeNode newSubgroup = parent.addSubgroup(importEntriesGroup);
+                newSubgroup.moveTo(parent.getGroupNode(), 0);
+                selectedGroups.setAll(new GroupNodeViewModel(db, stateManager, taskExecutor, newSubgroup, localDragboard, preferences));
+                writeGroupChangesToMetaData();
+            });
+        }
     }
 
     /**

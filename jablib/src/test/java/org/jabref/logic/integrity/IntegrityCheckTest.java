@@ -9,9 +9,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.jabref.logic.FilePreferences;
-import org.jabref.logic.citationkeypattern.CitationKeyGenerator;
-import org.jabref.logic.citationkeypattern.CitationKeyPatternPreferences;
-import org.jabref.logic.citationkeypattern.GlobalCitationKeyPatterns;
+import org.jabref.logic.citationkeypattern.CitationKeyGeneratorTestUtils;
 import org.jabref.logic.journals.JournalAbbreviationLoader;
 import org.jabref.model.database.BibDatabase;
 import org.jabref.model.database.BibDatabaseContext;
@@ -130,7 +128,7 @@ class IntegrityCheckTest {
         entry.setField(StandardField.EPRINT, UUID.randomUUID().toString());
 
         // duplicate entry
-        BibEntry clonedEntry = (BibEntry) entry.clone();
+        BibEntry clonedEntry = new BibEntry(entry);
 
         BibDatabase bibDatabase = new BibDatabase();
         bibDatabase.insertEntry(entry);
@@ -138,7 +136,7 @@ class IntegrityCheckTest {
 
         new IntegrityCheck(context,
                 mock(FilePreferences.class),
-                createCitationKeyPatternPreferences(),
+                CitationKeyGeneratorTestUtils.getInstanceForTesting(),
                 JournalAbbreviationLoader.loadBuiltInRepository(),
                 false)
                 .check();
@@ -173,7 +171,7 @@ class IntegrityCheckTest {
 
         messages = new IntegrityCheck(context,
                 mock(FilePreferences.class),
-                createCitationKeyPatternPreferences(),
+                CitationKeyGeneratorTestUtils.getInstanceForTesting(),
                 JournalAbbreviationLoader.loadBuiltInRepository(),
                 false)
                 .check();
@@ -188,26 +186,12 @@ class IntegrityCheckTest {
 
         messages = new IntegrityCheck(context,
                 filePreferencesMock,
-                createCitationKeyPatternPreferences(),
+                CitationKeyGeneratorTestUtils.getInstanceForTesting(),
                 JournalAbbreviationLoader.loadBuiltInRepository(),
                 false)
                 .check();
 
         assertEquals(List.of(), messages);
-    }
-
-    private CitationKeyPatternPreferences createCitationKeyPatternPreferences() {
-        return new CitationKeyPatternPreferences(
-                false,
-                false,
-                false,
-                CitationKeyPatternPreferences.KeySuffix.SECOND_WITH_B,
-                "",
-                "",
-                CitationKeyGenerator.DEFAULT_UNWANTED_CHARACTERS,
-                GlobalCitationKeyPatterns.fromPattern("[auth][year]"),
-                "",
-                ',');
     }
 
     private BibDatabaseContext withMode(BibDatabaseContext context, BibDatabaseMode mode) {

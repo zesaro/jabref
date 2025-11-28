@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -31,13 +30,13 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import org.jabref.architecture.AllowedToUseClassGetResource;
-import org.jabref.gui.ClipBoardManager;
 import org.jabref.gui.DialogService;
 import org.jabref.gui.DragAndDropDataFormats;
 import org.jabref.gui.LibraryTab;
 import org.jabref.gui.LibraryTabContainer;
 import org.jabref.gui.StateManager;
 import org.jabref.gui.actions.StandardActions;
+import org.jabref.gui.clipboard.ClipBoardManager;
 import org.jabref.gui.edit.EditAction;
 import org.jabref.gui.externalfiles.ExternalFilesEntryLinker;
 import org.jabref.gui.externalfiles.FindUnlinkedFilesAction;
@@ -70,12 +69,12 @@ import org.jabref.model.entry.identifier.DOI;
 import org.jabref.model.entry.types.StandardEntryType;
 
 import com.airhacks.afterburner.injection.Injector;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @AllowedToUseClassGetResource("JavaFX internally handles the passed URLs properly.")
 public class MainTable extends TableView<BibEntryTableViewModel> {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(MainTable.class);
     private static final PseudoClass MATCHING_SEARCH_AND_GROUPS = PseudoClass.getPseudoClass("matching-search-and-groups");
     private static final PseudoClass MATCHING_SEARCH_NOT_GROUPS = PseudoClass.getPseudoClass("matching-search-not-groups");
@@ -99,10 +98,11 @@ public class MainTable extends TableView<BibEntryTableViewModel> {
     private String columnSearchTerm;
     private boolean citationMergeMode = false;
 
+    /// There is one maintable instance per library tab
     public MainTable(MainTableDataModel model,
                      LibraryTab libraryTab,
                      LibraryTabContainer tabContainer,
-                     BibDatabaseContext database,
+                     @NonNull BibDatabaseContext database,
                      GuiPreferences preferences,
                      DialogService dialogService,
                      StateManager stateManager,
@@ -112,10 +112,9 @@ public class MainTable extends TableView<BibEntryTableViewModel> {
                      TaskExecutor taskExecutor,
                      ImportHandler importHandler) {
         super();
-
         this.libraryTab = libraryTab;
         this.stateManager = stateManager;
-        this.database = Objects.requireNonNull(database);
+        this.database = database;
         this.preferences = preferences;
         this.dialogService = dialogService;
         this.model = model;
@@ -180,10 +179,10 @@ public class MainTable extends TableView<BibEntryTableViewModel> {
         // force match category column to be the first sort order, (match_category column is always the first column)
         this.getSortOrder().addFirst(getColumns().getFirst());
         this.getSortOrder().addListener((ListChangeListener<TableColumn<BibEntryTableViewModel, ?>>) change -> {
-                if (!this.getSortOrder().getFirst().equals(getColumns().getFirst())) {
-                    this.getSortOrder().addFirst(getColumns().getFirst());
-                }
-            });
+            if (!this.getSortOrder().getFirst().equals(getColumns().getFirst())) {
+                this.getSortOrder().addFirst(getColumns().getFirst());
+            }
+        });
 
         mainTablePreferences.getColumnPreferences().getColumnSortOrder().forEach(columnModel ->
                 this.getColumns().stream()
@@ -315,12 +314,42 @@ public class MainTable extends TableView<BibEntryTableViewModel> {
             // keep original entry selected and reset citation merge mode
             this.citationMergeMode = false;
         } else {
-            // select new entry
-            getSelectionModel().clearSelection();
             findEntry(bibEntry).ifPresent(entry -> {
-                getSelectionModel().select(entry);
-                scrollTo(entry);
+                int index = getItems().indexOf(entry);
+                if (index >= 0) {
+                    getSelectionModel().clearAndSelect(index);
+                    scrollTo(index);
+                }
             });
+        }
+    }
+
+    public void clearAndSelect(List<BibEntry> bibEntries) {
+        // check if entries merged from citation relations tab
+        if (citationMergeMode) {
+            // keep original entry selected and reset citation merge mode
+            this.citationMergeMode = false;
+        } else {
+            // select new entries
+            List<Integer> indices = bibEntries.stream()
+                                              .filter(bibEntry -> bibEntry.getCitationKey().isPresent())
+                                              .flatMap(bibEntry -> findEntryByCitationKey(bibEntry.getCitationKey().get()).stream())
+                                              .map(entry -> getItems().indexOf(entry))
+                                              .filter(index -> index >= 0)
+                                              .toList();
+
+            if (!indices.isEmpty()) {
+                // For multiple selections, clear once then select all
+                getSelectionModel().clearSelection();
+                indices.forEach(index -> {
+                    if (index < getItems().size()) {
+                        getSelectionModel().select(index);
+                    } else {
+                        LOGGER.debug("Could not select entry at index {} since it is out of bounds", index);
+                    }
+                });
+                scrollTo(indices.getFirst());
+            }
         }
     }
 
@@ -369,7 +398,7 @@ public class MainTable extends TableView<BibEntryTableViewModel> {
         EditAction cutAction = new EditAction(StandardActions.CUT, () -> libraryTab, stateManager, undoManager);
         EditAction deleteAction = new EditAction(StandardActions.DELETE_ENTRY, () -> libraryTab, stateManager, undoManager);
         OpenUrlAction openUrlAction = new OpenUrlAction(dialogService, stateManager, preferences);
-        OpenExternalFileAction openExternalFileActionFileAction = new OpenExternalFileAction(dialogService, stateManager, preferences, taskExecutor);
+        OpenSelectedEntriesFilesAction openSelectedEntriesFilesActionFileAction = new OpenSelectedEntriesFilesAction(dialogService, stateManager, preferences, taskExecutor);
         MergeWithFetchedEntryAction mergeWithFetchedEntryAction = new MergeWithFetchedEntryAction(dialogService, stateManager, taskExecutor, preferences, undoManager);
         LookupIdentifierAction<DOI> lookupIdentifierAction = new LookupIdentifierAction<>(WebFetchers.getIdFetcherForIdentifier(DOI.class), stateManager, undoManager, dialogService, taskExecutor);
 
@@ -414,7 +443,7 @@ public class MainTable extends TableView<BibEntryTableViewModel> {
                         event.consume();
                         break;
                     case SCROLL_TO_PREVIOUS_MATCH_CATEGORY:
-                         scrollToPreviousMatchCategory();
+                        scrollToPreviousMatchCategory();
                         event.consume();
                         break;
                     case OPEN_URL_OR_DOI:
@@ -422,7 +451,7 @@ public class MainTable extends TableView<BibEntryTableViewModel> {
                         event.consume();
                         break;
                     case OPEN_FILE:
-                        openExternalFileActionFileAction.execute();
+                        openSelectedEntriesFilesActionFileAction.execute();
                         event.consume();
                         break;
                     case MERGE_WITH_FETCHED_ENTRY:
@@ -520,7 +549,9 @@ public class MainTable extends TableView<BibEntryTableViewModel> {
             switch (ControlHelper.getDroppingMouseLocation(row, event)) {
                 // Different actions depending on where the user releases the drop in the target row
                 // - Bottom + top -> import entries
-                case TOP, BOTTOM -> importHandler.importFilesInBackground(files, database, filePreferences, transferMode).executeWith(taskExecutor);
+                case TOP,
+                     BOTTOM ->
+                        importHandler.importFilesInBackground(files, transferMode).executeWith(taskExecutor);
                 // - Center -> modify entry: link files to entry
                 case CENTER -> {
                     BibEntry entry = target.getEntry();
@@ -542,7 +573,7 @@ public class MainTable extends TableView<BibEntryTableViewModel> {
         if (event.getDragboard().hasFiles()) {
             List<Path> files = event.getDragboard().getFiles().stream().map(File::toPath).toList();
             importHandler
-                    .importFilesInBackground(files, this.database, filePreferences, event.getTransferMode())
+                    .importFilesInBackground(files, event.getTransferMode())
                     .executeWith(taskExecutor);
             success = true;
         }
@@ -571,18 +602,22 @@ public class MainTable extends TableView<BibEntryTableViewModel> {
         return model.getViewModelByIndex(database.getDatabase().indexOf(entry));
     }
 
+    private Optional<BibEntryTableViewModel> findEntryByCitationKey(String citationKey) {
+        return model.getViewModelByCitationKey(citationKey);
+    }
+
     public void setCitationMergeMode(boolean citationMerge) {
         this.citationMergeMode = citationMerge;
     }
 
     private void updatePlaceholder(VBox placeholderBox) {
-       if (database.getDatabase().getEntries().isEmpty()) {
-           this.setPlaceholder(placeholderBox);
-           // [impl->req~maintable.focus~1]
-           requestFocus();
-       } else {
-           this.setPlaceholder(null);
-       }
+        if (database.getDatabase().getEntries().isEmpty()) {
+            this.setPlaceholder(placeholderBox);
+            // [impl->req~maintable.focus~1]
+            requestFocus();
+        } else {
+            this.setPlaceholder(null);
+        }
     }
 
     private BibEntry addExampleEntry() {

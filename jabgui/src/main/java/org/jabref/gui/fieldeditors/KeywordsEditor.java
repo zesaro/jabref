@@ -1,5 +1,6 @@
 package org.jabref.gui.fieldeditors;
 
+import java.net.URL;
 import java.util.Comparator;
 import java.util.Optional;
 
@@ -13,19 +14,20 @@ import javafx.scene.Parent;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 
-import org.jabref.gui.ClipBoardManager;
 import org.jabref.gui.DialogService;
 import org.jabref.gui.JabRefDialogService;
 import org.jabref.gui.actions.ActionFactory;
 import org.jabref.gui.actions.SimpleCommand;
 import org.jabref.gui.actions.StandardActions;
 import org.jabref.gui.autocompleter.SuggestionProvider;
+import org.jabref.gui.clipboard.ClipBoardManager;
 import org.jabref.gui.icon.IconTheme;
 import org.jabref.gui.keyboard.KeyBinding;
 import org.jabref.gui.keyboard.KeyBindingRepository;
@@ -33,6 +35,8 @@ import org.jabref.gui.util.ViewModelListCellFactory;
 import org.jabref.logic.integrity.FieldCheckers;
 import org.jabref.logic.l10n.Localization;
 import org.jabref.logic.preferences.CliPreferences;
+import org.jabref.logic.shared.exception.MscCodeLoadingException;
+import org.jabref.logic.util.MscCodeUtils;
 import org.jabref.model.entry.BibEntry;
 import org.jabref.model.entry.Keyword;
 import org.jabref.model.entry.KeywordList;
@@ -42,6 +46,7 @@ import com.airhacks.afterburner.injection.Injector;
 import com.airhacks.afterburner.views.ViewLoader;
 import com.dlsc.gemsfx.TagsField;
 import com.google.common.collect.Comparators;
+import com.google.common.collect.HashBiMap;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +54,30 @@ import org.slf4j.LoggerFactory;
 public class KeywordsEditor extends HBox implements FieldEditorFX {
     private static final Logger LOGGER = LoggerFactory.getLogger(KeywordsEditor.class);
     private static final PseudoClass FOCUSED = PseudoClass.getPseudoClass("focused");
+    private static HashBiMap<String, String> mscmap;
+
+    static {
+        URL resourceUrl = KeywordsEditor.class.getClassLoader().getResource("msc_codes.json");
+
+        if (resourceUrl == null) {
+            LOGGER.error("Resource not found: msc_codes.json");
+            mscmap = HashBiMap.create();
+        }
+
+        try {
+            Optional<HashBiMap<String, String>> optionalMscCodes = MscCodeUtils.loadMscCodesFromJson(resourceUrl);
+
+            if (optionalMscCodes.isPresent()) {
+                mscmap = optionalMscCodes.get();
+            } else {
+                LOGGER.warn("Resource not found msc_codes.json");
+                mscmap = HashBiMap.create();
+            }
+        } catch (MscCodeLoadingException e) {
+            LOGGER.error("Error loading MSC codes", e);
+            mscmap = HashBiMap.create();
+        }
+    }
 
     @FXML private KeywordsEditorViewModel viewModel;
     @FXML private TagsField<Keyword> keywordTagsField;
@@ -80,17 +109,17 @@ public class KeywordsEditor extends HBox implements FieldEditorFX {
         keywordTagsField.setTagViewFactory(this::createTag);
 
         keywordTagsField.setSuggestionProvider(request -> viewModel.getSuggestions(request.getUserText()));
-        keywordTagsField.setConverter(viewModel.getStringConverter());
+        keywordTagsField.setConverter(KeywordsEditorViewModel.getStringConverter());
         keywordTagsField.setMatcher((keyword, searchText) -> keyword.get().toLowerCase().startsWith(searchText.toLowerCase()));
         keywordTagsField.setComparator(Comparator.comparing(Keyword::get));
 
-        keywordTagsField.setNewItemProducer(searchText -> viewModel.getStringConverter().fromString(searchText));
+        keywordTagsField.setNewItemProducer(searchText -> KeywordsEditorViewModel.getStringConverter().fromString(searchText));
 
         keywordTagsField.setShowSearchIcon(false);
-        keywordTagsField.setOnMouseClicked(event -> keywordTagsField.getEditor().requestFocus());
+        keywordTagsField.setOnMouseClicked(_ -> keywordTagsField.getEditor().requestFocus());
         keywordTagsField.getEditor().getStyleClass().clear();
         keywordTagsField.getEditor().getStyleClass().add("tags-field-editor");
-        keywordTagsField.getEditor().focusedProperty().addListener((observable, oldValue, newValue) -> keywordTagsField.pseudoClassStateChanged(FOCUSED, newValue));
+        keywordTagsField.getEditor().focusedProperty().addListener((_, _, newValue) -> keywordTagsField.pseudoClassStateChanged(FOCUSED, newValue));
 
         String keywordSeparator = String.valueOf(viewModel.getKeywordSeparator());
         keywordTagsField.getEditor().setOnKeyReleased(event -> {
@@ -100,7 +129,7 @@ public class KeywordsEditor extends HBox implements FieldEditorFX {
             }
         });
 
-        this.viewModel.keywordListProperty().addListener((observable, oldValue, newValue) -> {
+        this.viewModel.keywordListProperty().addListener((_, _, _) -> {
             if (keywordTagsField.getTags().size() < 2) {
                 isSortedTagsField = false;
             } else if ((Comparators.isInOrder(keywordTagsField.getTags(), Comparator.comparing(Keyword::get))) || isSortedTagsField) {
@@ -113,7 +142,7 @@ public class KeywordsEditor extends HBox implements FieldEditorFX {
             KeyBindingRepository keyBindingRepository = Injector.instantiateModelOrService(KeyBindingRepository.class);
 
             if (keyBindingRepository.checkKeyCombinationEquality(KeyBinding.PASTE, event)) {
-                String clipboardText = clipBoardManager.getContents();
+                String clipboardText = ClipBoardManager.getContents();
                 if (!clipboardText.isEmpty()) {
                     KeywordList keywordsList = KeywordList.parse(clipboardText, viewModel.getKeywordSeparator());
                     keywordsList.stream().forEach(keyword -> keywordTagsField.addTags(keyword));
@@ -130,7 +159,7 @@ public class KeywordsEditor extends HBox implements FieldEditorFX {
         Label tagLabel = new Label();
         tagLabel.setText(keywordTagsField.getConverter().toString(keyword));
         tagLabel.setGraphic(IconTheme.JabRefIcons.REMOVE_TAGS.getGraphicNode());
-        tagLabel.getGraphic().setOnMouseClicked(event -> keywordTagsField.removeTags(keyword));
+        tagLabel.getGraphic().setOnMouseClicked(_ -> keywordTagsField.removeTags(keyword));
         tagLabel.setContentDisplay(ContentDisplay.RIGHT);
         ContextMenu contextMenu = new ContextMenu();
         ActionFactory factory = new ActionFactory();
@@ -153,6 +182,14 @@ public class KeywordsEditor extends HBox implements FieldEditorFX {
             }
             event.consume();
         });
+
+        // Checks Keyword for MSC code and displays tooltip with corresponding description
+        if (mscmap.containsKey(tagLabel.getText())) {
+            String mscClassification = mscmap.get(tagLabel.getText());
+            Tooltip tooltip = new Tooltip(mscClassification);
+            tagLabel.setTooltip(tooltip);
+        }
+
         tagLabel.setOnDragDetected(event -> {
             Dragboard db = tagLabel.startDragAndDrop(TransferMode.MOVE);
             ClipboardContent content = new ClipboardContent();
@@ -161,8 +198,8 @@ public class KeywordsEditor extends HBox implements FieldEditorFX {
             draggedKeyword = Optional.of(keyword);
             event.consume();
         });
-        tagLabel.setOnDragEntered(event -> tagLabel.setStyle("-fx-background-color: lightgrey;"));
-        tagLabel.setOnDragExited(event -> tagLabel.setStyle(""));
+        tagLabel.setOnDragEntered(_ -> tagLabel.setStyle("-fx-background-color: lightgrey;"));
+        tagLabel.setOnDragExited(_ -> tagLabel.setStyle(""));
         tagLabel.setOnDragDropped(event -> {
             Dragboard db = event.getDragboard();
             if (db.hasString() && draggedKeyword.isPresent()) {
@@ -217,18 +254,18 @@ public class KeywordsEditor extends HBox implements FieldEditorFX {
                 case COPY -> {
                     clipBoardManager.setContent(keyword.get());
                     dialogService.notify(Localization.lang("Copied '%0' to clipboard.",
-                                                           JabRefDialogService.shortenDialogMessage(keyword.get())));
+                            JabRefDialogService.shortenDialogMessage(keyword.get())));
                 }
                 case CUT -> {
                     clipBoardManager.setContent(keyword.get());
                     dialogService.notify(Localization.lang("Copied '%0' to clipboard.",
-                                                           JabRefDialogService.shortenDialogMessage(keyword.get())));
+                            JabRefDialogService.shortenDialogMessage(keyword.get())));
                     keywordTagsField.removeTags(keyword);
                 }
                 case DELETE ->
-                    keywordTagsField.removeTags(keyword);
+                        keywordTagsField.removeTags(keyword);
                 default ->
-                    LOGGER.info("Action {} not defined", command.getText());
+                        LOGGER.info("Action {} not defined", command.getText());
             }
         }
     }

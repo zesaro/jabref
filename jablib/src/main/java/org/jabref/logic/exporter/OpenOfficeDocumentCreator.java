@@ -12,12 +12,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
@@ -27,6 +27,7 @@ import org.jabref.model.database.BibDatabase;
 import org.jabref.model.database.BibDatabaseContext;
 import org.jabref.model.entry.BibEntry;
 
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,10 +78,9 @@ public class OpenOfficeDocumentCreator extends Exporter {
     }
 
     @Override
-    public void export(final BibDatabaseContext databaseContext, final Path file,
-                       List<BibEntry> entries) throws IOException {
-        Objects.requireNonNull(databaseContext);
-        Objects.requireNonNull(entries);
+    public void export(@NonNull final BibDatabaseContext databaseContext,
+                       final Path file,
+                       @NonNull List<BibEntry> entries) throws IOException {
         if (!entries.isEmpty()) { // Do not export if no entries
             OpenOfficeDocumentCreator.exportOpenOfficeCalc(file, databaseContext.getDatabase(), entries);
         }
@@ -95,7 +95,7 @@ public class OpenOfficeDocumentCreator extends Exporter {
             Transformer trans = TransformerFactory.newInstance().newTransformer();
             trans.setOutputProperty(OutputKeys.INDENT, "yes");
             trans.transform(source, result);
-        } catch (Exception e) {
+        } catch (TransformerException | IOException e) {
             throw new Error(e);
         }
     }

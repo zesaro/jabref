@@ -28,13 +28,13 @@ public class ISBNIdentifierEditorViewModel extends BaseIdentifierEditorViewModel
         super(StandardField.ISBN, suggestionProvider, fieldCheckers, dialogService, taskExecutor, preferences, undoManager);
         this.undoManager = undoManager;
         this.stateManager = stateManager;
-        configure(true, false);
+        configure(true, false, false);
     }
 
     @Override
     public void fetchBibliographyInformation(BibEntry bibEntry) {
         stateManager.getActiveDatabase().ifPresentOrElse(
-                databaseContext -> new FetchAndMergeEntry(databaseContext, taskExecutor, preferences, dialogService, undoManager)
+                databaseContext -> new FetchAndMergeEntry(databaseContext, taskExecutor, preferences, dialogService, undoManager, stateManager)
                         .fetchAndMerge(entry, field),
                 () -> dialogService.notify(Localization.lang("No library selected"))
         );

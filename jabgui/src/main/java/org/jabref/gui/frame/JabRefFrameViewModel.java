@@ -20,11 +20,11 @@ import javafx.beans.value.ObservableBooleanValue;
 import javafx.scene.control.ButtonType;
 
 import org.jabref.cli.CliImportHelper;
-import org.jabref.gui.ClipBoardManager;
 import org.jabref.gui.DialogService;
 import org.jabref.gui.LibraryTab;
 import org.jabref.gui.LibraryTabContainer;
 import org.jabref.gui.StateManager;
+import org.jabref.gui.clipboard.ClipBoardManager;
 import org.jabref.gui.importer.ImportEntriesDialog;
 import org.jabref.gui.importer.actions.OpenDatabaseAction;
 import org.jabref.gui.preferences.GuiPreferences;
@@ -120,10 +120,10 @@ public class JabRefFrameViewModel implements UiMessageHandler {
 
         // Read the opened and focused databases before closing them
         List<Path> openedLibraries = tabContainer.getLibraryTabs().stream()
-                                          .map(LibraryTab::getBibDatabaseContext)
-                                          .map(BibDatabaseContext::getDatabasePath)
-                                          .flatMap(Optional::stream)
-                                          .toList();
+                                                 .map(LibraryTab::getBibDatabaseContext)
+                                                 .map(BibDatabaseContext::getDatabasePath)
+                                                 .flatMap(Optional::stream)
+                                                 .toList();
         Path focusedLibraries = Optional.ofNullable(tabContainer.getCurrentLibraryTab())
                                         .map(LibraryTab::getBibDatabaseContext)
                                         .flatMap(BibDatabaseContext::getDatabasePath)
@@ -164,9 +164,9 @@ public class JabRefFrameViewModel implements UiMessageHandler {
         // Handle OpenDatabases
         if (!blank) {
             uiCommands.stream()
-                    .filter(UiCommand.OpenLibraries.class::isInstance)
-                    .map(UiCommand.OpenLibraries.class::cast)
-                    .forEach(command -> openDatabaseAction.get().openFiles(command.toImport()));
+                      .filter(UiCommand.OpenLibraries.class::isInstance)
+                      .map(UiCommand.OpenLibraries.class::cast)
+                      .forEach(command -> openDatabaseAction.get().openFiles(command.toImport()));
 
             uiCommands.stream()
                       .filter(UiCommand.AppendToCurrentLibrary.class::isInstance)

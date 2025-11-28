@@ -1,7 +1,10 @@
 package org.jabref.gui.consistency;
 
-import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
+
+import javafx.concurrent.Task;
 
 import org.jabref.gui.DialogService;
 import org.jabref.gui.LibraryTab;
@@ -11,15 +14,17 @@ import org.jabref.gui.preferences.GuiPreferences;
 import org.jabref.gui.util.UiTaskExecutor;
 import org.jabref.logic.l10n.Localization;
 import org.jabref.logic.quality.consistency.BibliographyConsistencyCheck;
-import org.jabref.logic.util.BackgroundTask;
 import org.jabref.model.database.BibDatabaseContext;
-import org.jabref.model.entry.BibEntry;
 import org.jabref.model.entry.BibEntryTypesManager;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.jabref.gui.actions.ActionHelper.needsDatabase;
 
 public class ConsistencyCheckAction extends SimpleCommand {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConsistencyCheckAction.class);
     Supplier<LibraryTab> tabSupplier;
     private final DialogService dialogService;
     private final StateManager stateManager;
@@ -45,22 +50,41 @@ public class ConsistencyCheckAction extends SimpleCommand {
 
     @Override
     public void execute() {
-        BackgroundTask.wrap(() -> {
-            BibDatabaseContext databaseContext = stateManager.getActiveDatabase()
-                                                             .orElseThrow(() -> new NullPointerException("Database null"));
-            List<BibEntry> entries = databaseContext.getDatabase().getEntries();
+        Task<BibliographyConsistencyCheck.Result> task = new Task<>() {
+            @Override
+            public BibliographyConsistencyCheck.Result call() {
+                Optional<BibDatabaseContext> databaseContext = stateManager.getActiveDatabase();
+                if (databaseContext.isEmpty()) {
+                    LOGGER.debug("Consistency check invoked with no library opened.");
+                    dialogService.notify(Localization.lang("No library open"));
+                    return new BibliographyConsistencyCheck.Result(Map.of());
+                }
 
-            BibliographyConsistencyCheck consistencyCheck = new BibliographyConsistencyCheck();
-            return consistencyCheck.check(entries);
-        }).onSuccess(result -> {
-            if (result.entryTypeToResultMap().isEmpty()) {
+                BibDatabaseContext bibContext = databaseContext.get();
+
+                BibliographyConsistencyCheck consistencyCheck = new BibliographyConsistencyCheck();
+                return consistencyCheck.check(bibContext, (count, total) ->
+                        UiTaskExecutor.runInJavaFXThread(() -> {
+                            updateProgress(count, total);
+                            updateMessage(Localization.lang("%0/%1 entry types", count + 1, total));
+                        }));
+            }
+        };
+
+        task.setOnFailed(_ -> dialogService.showErrorDialogAndWait(Localization.lang("Consistency check failed."), task.getException()));
+        task.setOnSucceeded(_ -> {
+            if (task.getValue().entryTypeToResultMap().isEmpty()) {
                 dialogService.notify(Localization.lang("No problems found."));
             } else {
                 dialogService.showCustomDialogAndWait(
-                        new ConsistencyCheckDialog(tabSupplier.get(), dialogService, preferences, entryTypesManager, result));
+                        new ConsistencyCheckDialog(tabSupplier.get(), dialogService, preferences, entryTypesManager, task.getValue()));
             }
-        }).onFailure(exception ->
-                dialogService.showErrorDialogAndWait(Localization.lang("Consistency check failed."), exception)
-        ).executeWith(taskExecutor);
+        });
+        taskExecutor.execute(task);
+
+        dialogService.showProgressDialog(
+                Localization.lang("Check consistency"),
+                Localization.lang("Checking consistency..."),
+                task);
     }
 }

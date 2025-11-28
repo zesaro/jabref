@@ -1,0 +1,30 @@
+name: Welcome a first-time contributor
+
+on:
+  pull_request_target:
+    types: [opened]
+
+jobs:
+  welcome-first-time-contributor:
+    if: github.repository == 'JabRef/jabref'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: plbstl/first-contribution@v4
+        with:
+          labels: first contrib
+          pr-opened-msg: >
+            ### Hey @{fc-author}!
+
+
+            Thank you for contributing to JabRef! Your help is truly appreciated :heart:
+
+
+            We have automated checks in place, based on which you will soon get feedback if any of them are failing.
+            In a while, maintainers will also review your contribution.
+            Once that happens, you can go through their comments in the "Files changed" tab and act on them, or reply to the conversation if you have further inputs.
+
+
+            Please re-check our [contribution guide](https://github.com/JabRef/jabref/blob/main/CONTRIBUTING.md) in case of any other doubts related to our contribution workflow.

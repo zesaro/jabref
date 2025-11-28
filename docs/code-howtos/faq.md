@@ -10,6 +10,17 @@ Following is a list of common errors encountered by developers which lead to fai
 * Sync your fork with the JabRef repository: [General howto by GitHub](https://help.github.com/articles/syncing-a-fork/)
 * Branches and pull requests (🇩🇪): [https://github.com/unibas-marcelluethi/software-engineering/blob/master/docs/week2/exercises/practical-exercises.md](https://github.com/unibas-marcelluethi/software-engineering/blob/master/docs/week2/exercises/practical-exercises.md)
 
+## Failing GitHub workflow "Sync fork with upstream"
+
+To ease development, a GitHub workflow automatically updates your `main` branch daily.
+However, it is not allowed to update your files if the GitHub workflows are updated by the JabRef team.
+Therefore, GitHub notifies you now and then that "Sync fork with upstream failed for main branch".
+
+To solve this issue, open your GitHub repository in your browser.
+Then, click "Sync fork" to get your fork up-to-date and get the workflow passing again.
+
+![Sync fork](https://github.com/user-attachments/assets/5c1b0a17-0fde-4ce8-ac46-d9477a65c345)
+
 ## Failing tests
 
 ### Failing <b>Checkstyle</b> tests
@@ -50,13 +61,13 @@ Check the directory `jablib/src/main/resources/csl-locales`.
 If it is missing or empty, run `git submodule update`.
 If still not fixed, run `git reset --hard` **inside that directory**.
 
-### `org.jabref.architecture.MainArchitectureTest restrictStandardStreams` <span style="color:red">FAILED</span>
+### `org.jabref.support.CommonArchitectureTest restrictStandardStreams` <span style="color:red">FAILED</span>
 
 Check if you've used `System.out.println(...)` (the standard output stream) to log anything into the console.
 This is an architectural violation, as you should use the Logger instead for logging.
 More details on [how to log](https://devdocs.jabref.org/code-howtos/logging.html).
 
-### `org.jabref.architecture.MainArchitectureTest doNotUseLogicInModel` <span style="color:red">FAILED</span>
+### `org.jabref.support.CommonArchitectureTest doNotUseLogicInModel` <span style="color:red">FAILED</span>
 
 One common case when this test fails is when you put any class purely containing business logic inside the `model` package (i.e., inside the directory `org/jabref/model/`).
 To fix this, shift the class to a sub-package within the `logic` package (i.e., the directory`org/jabref/logic/`).
@@ -96,7 +107,7 @@ You probably chose the wrong gradle task:
 
 ### The problem
 
-Sometimes, when contributing to JabRef, you may see `abbrv.jabref.org` or `csl-styles` or `csl-locales` among the changed files in your pull request. This means that you have accidentally committed your local submodules into the branch.
+Sometimes, when contributing to JabRef, you may see `abbrv.jabref.org`, `csl-styles` or `csl-locales` among the changed files in your pull request. This means that you have accidentally committed your local submodules into the branch.
 
 ![Changed submodules](../images/submodules.png)
 
@@ -107,16 +118,16 @@ What's strange (mostly an IntelliJ bug): Regardless of CLI or GUI, These changes
   
 ### Fix
 
-For `csl-styles`:
+For `csl-styles`, `csl-locales`, and `abbrev.jabref.org`:
 
 ```bash
 git merge origin/main
 git checkout main -- jablib/src/main/resources/csl-styles
-... git commit ... 
+git checkout main -- jablib/src/main/resources/csl-locales
+git checkout main -- jablib/src/main/abbrv.jabref.org
+git commit -m "Fix submodules"
 git push
 ```
-
-And similarly for `csl-locales` or `abbrv.jabref.org`.
 
 #### Alternative method (if the above doesn't work)
 
@@ -152,12 +163,46 @@ And similarly for `csl-locales` or `abbrv.jabref.org`.
 
 ### Prevention
 
-To avoid this, avoid staging using `git add .` from CLI. Preferably use a GUI-based git manager, such as the one built in IntelliJ or open git gui from the command line. Even if you accidentally stage them, don't commit all files, selectively commit the files you touched using the GUI based tool, and push.
+To avoid this, avoid staging using any of these commands:
+
+* `git add .`
+* `git add jablib/src/main` (or any path prefix)
+* `git commit -a`
+
+Preferably use a GUI-based git manager, such as the one built in IntelliJ or open git gui from the command line. Even if you accidentally stage them, don't commit all files, selectively commit the files you touched using the GUI based tool, and push.
 
 ## Q: I get `java: package org.jabref.logic.journals does not exist`
 
 A: You have to ignore `buildSrc/src/main` as source directory in IntelliJ as indicated in our [setup guide](https://devdocs.jabref.org/getting-into-the-code/guidelines-for-setting-up-a-local-workspace).
 
 Also filed as IntelliJ issue [IDEA-240250](https://youtrack.jetbrains.com/issue/IDEA-240250).
+
+## IDE import issues
+
+One might see following error:
+
+```text
+Could not apply requested plugin [id: 'org.jabref.gradle.module'] as it does not provide a plugin with id 'org.jabref.gradle.module'. This is caused by an incorrect plugin implementation. Please contact the plugin author(s).
+> Plugin with id 'org.jabref.gradle.module' not found.
+```
+
+This happened on Debian 12, with IntelliJ IDEA 2025.2.4 (Ultimate Edition).
+The workaround is to compile JabRef once from the command line.
+
+* Linux: Execute `./gradlew :jabgui:compileJava`
+* Windows (Powershell): Execute `.\gradlew :jabgui:compileJava`
+
+In case Gradle does not find a JDK, use [`gg.cmd`](https://github.com/eirikb/gg) as follows:
+
+1. Download <https://github.com/eirikb/gg/releases/latest/download/gg.cmd>
+2. Move the file to your JabRef project directory
+3. Compile JabRef
+
+   * Windows: `.\gg.cmd gradle:java@24 jabgui:compileJava`
+   * Linux: `sh -x ./gg.cmd gradle:java@24 jabgui:compileJava`
+
+4. Wait until the command execution completes.
+
+After about one minute, however, you can continue setting up IntelliJ, because the initial Gradle setup succeeded.
 
 <!-- markdownlint-disable-file MD033 -->

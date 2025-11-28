@@ -39,7 +39,7 @@ public class XmpUtilShared {
         try {
             meta = DOM_XMP_PARSER.parse(is);
             return meta;
-        } catch (Exception e) {
+        } catch (XmpParsingException e) {
             // bad style to catch Exception but as this is called in a loop we do not want to break here when any schema encounters an error
             throw new IOException(e);
         }
@@ -48,7 +48,7 @@ public class XmpUtilShared {
     /**
      * Will try to read XMP metadata from the given file, returning whether
      * metadata was found.
-     *
+     * <p>
      * Caution: This method is as expensive as it is reading the actual metadata
      * itself from the PDF.
      *

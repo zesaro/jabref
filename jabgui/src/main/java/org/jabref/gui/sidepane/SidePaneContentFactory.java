@@ -4,10 +4,10 @@ import javax.swing.undo.UndoManager;
 
 import javafx.scene.Node;
 
-import org.jabref.gui.ClipBoardManager;
 import org.jabref.gui.DialogService;
 import org.jabref.gui.LibraryTabContainer;
 import org.jabref.gui.StateManager;
+import org.jabref.gui.clipboard.ClipBoardManager;
 import org.jabref.gui.entryeditor.AdaptVisibleTabs;
 import org.jabref.gui.groups.GroupTreeView;
 import org.jabref.gui.importer.fetcher.WebSearchPaneView;
@@ -64,35 +64,38 @@ public class SidePaneContentFactory {
 
     public Node create(SidePaneType sidePaneType) {
         return switch (sidePaneType) {
-            case GROUPS -> new GroupTreeView(
-                    taskExecutor,
-                    stateManager,
-                    adaptVisibleTabs,
-                    preferences,
-                    dialogService,
-                    aiService,
-                    undoManager,
-                    fileUpdateMonitor);
-            case OPEN_OFFICE -> new OpenOfficePanel(
-                    tabContainer,
-                    preferences,
-                    preferences.getOpenOfficePreferences(Injector.instantiateModelOrService(JournalAbbreviationRepository.class)),
-                    preferences.getExternalApplicationsPreferences(),
-                    preferences.getLayoutFormatterPreferences(),
-                    preferences.getCitationKeyPatternPreferences(),
-                    abbreviationRepository,
-                    (UiTaskExecutor) taskExecutor,
-                    dialogService,
-                    aiService,
-                    stateManager,
-                    fileUpdateMonitor,
-                    entryTypesManager,
-                    clipBoardManager,
-                    undoManager).getContent();
-            case WEB_SEARCH -> new WebSearchPaneView(
-                    preferences,
-                    dialogService,
-                    stateManager);
+            case GROUPS ->
+                    new GroupTreeView(
+                            taskExecutor,
+                            stateManager,
+                            adaptVisibleTabs,
+                            preferences,
+                            dialogService,
+                            aiService,
+                            undoManager,
+                            fileUpdateMonitor);
+            case OPEN_OFFICE ->
+                    new OpenOfficePanel(
+                            tabContainer,
+                            preferences,
+                            preferences.getOpenOfficePreferences(Injector.instantiateModelOrService(JournalAbbreviationRepository.class)),
+                            preferences.getExternalApplicationsPreferences(),
+                            preferences.getLayoutFormatterPreferences(),
+                            preferences.getCitationKeyPatternPreferences(),
+                            abbreviationRepository,
+                            (UiTaskExecutor) taskExecutor,
+                            dialogService,
+                            aiService,
+                            stateManager,
+                            fileUpdateMonitor,
+                            entryTypesManager,
+                            clipBoardManager,
+                            undoManager).getContent();
+            case WEB_SEARCH ->
+                    new WebSearchPaneView(
+                            preferences,
+                            dialogService,
+                            stateManager);
         };
     }
 }

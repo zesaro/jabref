@@ -36,6 +36,7 @@ public enum KeyBinding {
     CLOSE("Close dialog", Localization.lang("Close dialog"), "Esc", KeyBindingCategory.VIEW),
     COPY("Copy", Localization.lang("Copy"), "ctrl+C", KeyBindingCategory.EDIT),
     COPY_TITLE("Copy title", Localization.lang("Copy title"), "ctrl+shift+alt+T", KeyBindingCategory.EDIT),
+    JUMP_TO_FIELD("Jump to field", Localization.lang("Jump to field"), "ctrl+J", KeyBindingCategory.EDIT),
 
     // We migrated from "Copy \\cite{citation key}" to "Copy citation key with configured cite command", therefore we keep the "old string" for backwards comppatibility
     COPY_CITE_CITATION_KEY("Copy \\cite{citation key}", Localization.lang("Copy citation key with configured cite command"), "ctrl+K", KeyBindingCategory.EDIT),
@@ -69,9 +70,12 @@ public enum KeyBinding {
     IMPORT_INTO_NEW_DATABASE("Import into new library", Localization.lang("Import into new library"), "ctrl+alt+I", KeyBindingCategory.FILE),
     MERGE_ENTRIES("Merge entries", Localization.lang("Merge entries"), "ctrl+M", KeyBindingCategory.TOOLS),
 
-    CREATE_ENTRY("Create new entry", Localization.lang("Create new entry"), "ctrl+N", KeyBindingCategory.BIBTEX),
-    CREATE_ENTRY_IDENTIFIER("Enter identifier", Localization.lang("Enter identifier"), "ctrl+alt+shift+N", KeyBindingCategory.BIBTEX),
-    CREATE_ENTRY_PLAINTEXT("Interpret citations", Localization.lang("Interpret citations"), "ctrl+shift+N", KeyBindingCategory.BIBTEX),
+    BACK("Back", Localization.lang("Back"), "alt+LEFT", KeyBindingCategory.VIEW),
+    FORWARD("Forward", Localization.lang("Forward"), "alt+RIGHT", KeyBindingCategory.VIEW),
+
+    ADD_ENTRY("Add entry", Localization.lang("Add entry"), "ctrl+N", KeyBindingCategory.BIBTEX),
+    ADD_ENTRY_IDENTIFIER("Enter identifier", Localization.lang("Enter identifier"), "ctrl+alt+shift+N", KeyBindingCategory.BIBTEX),
+    ADD_ENTRY_PLAINTEXT("Interpret citations", Localization.lang("Interpret citations"), "ctrl+shift+N", KeyBindingCategory.BIBTEX),
     NEW_ARTICLE("New article", Localization.lang("New article"), "ctrl+shift+A", KeyBindingCategory.BIBTEX),
     NEW_BOOK("New book", Localization.lang("New book"), "ctrl+shift+B", KeyBindingCategory.BIBTEX),
     NEW_INBOOK("New inbook", Localization.lang("New inbook"), "ctrl+shift+I", KeyBindingCategory.BIBTEX),

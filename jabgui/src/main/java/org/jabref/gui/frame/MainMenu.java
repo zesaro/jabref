@@ -7,8 +7,8 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.stage.Stage;
 
-import org.jabref.gui.ClipBoardManager;
 import org.jabref.gui.DialogService;
 import org.jabref.gui.StateManager;
 import org.jabref.gui.actions.ActionFactory;
@@ -18,11 +18,11 @@ import org.jabref.gui.ai.ClearEmbeddingsAction;
 import org.jabref.gui.auximport.NewSubLibraryAction;
 import org.jabref.gui.citationkeypattern.GenerateCitationKeyAction;
 import org.jabref.gui.cleanup.CleanupAction;
+import org.jabref.gui.clipboard.ClipBoardManager;
 import org.jabref.gui.consistency.ConsistencyCheckAction;
 import org.jabref.gui.copyfiles.CopyFilesAction;
 import org.jabref.gui.documentviewer.ShowDocumentViewerAction;
 import org.jabref.gui.duplicationFinder.DuplicateSearch;
-import org.jabref.gui.edit.CopyMoreAction;
 import org.jabref.gui.edit.EditAction;
 import org.jabref.gui.edit.ManageKeywordsAction;
 import org.jabref.gui.edit.OpenBrowserAction;
@@ -31,13 +31,16 @@ import org.jabref.gui.edit.automaticfiededitor.AutomaticFieldEditorAction;
 import org.jabref.gui.entryeditor.OpenEntryEditorAction;
 import org.jabref.gui.entryeditor.PreviewSwitchAction;
 import org.jabref.gui.exporter.ExportCommand;
-import org.jabref.gui.exporter.ExportToClipboardAction;
 import org.jabref.gui.exporter.SaveAction;
 import org.jabref.gui.exporter.SaveAllAction;
 import org.jabref.gui.exporter.WriteMetadataToLinkedPdfsAction;
 import org.jabref.gui.externalfiles.AutoLinkFilesAction;
 import org.jabref.gui.externalfiles.DownloadFullTextAction;
 import org.jabref.gui.externalfiles.FindUnlinkedFilesAction;
+import org.jabref.gui.git.GitCommitAction;
+import org.jabref.gui.git.GitPullAction;
+import org.jabref.gui.git.GitPushAction;
+import org.jabref.gui.git.GitShareToGitHubAction;
 import org.jabref.gui.help.AboutAction;
 import org.jabref.gui.help.ErrorConsoleAction;
 import org.jabref.gui.help.HelpAction;
@@ -53,13 +56,15 @@ import org.jabref.gui.libraryproperties.LibraryPropertiesAction;
 import org.jabref.gui.linkedfile.RedownloadMissingFilesAction;
 import org.jabref.gui.maintable.NewLibraryFromPdfActionOffline;
 import org.jabref.gui.maintable.NewLibraryFromPdfActionOnline;
-import org.jabref.gui.mergeentries.MergeEntriesAction;
+import org.jabref.gui.maintable.RightClickMenu;
+import org.jabref.gui.mergeentries.BatchEntryMergeWithFetchedDataAction;
+import org.jabref.gui.mergeentries.MergeWithFetchedEntryAction;
+import org.jabref.gui.mergeentries.threewaymerge.MergeEntriesAction;
 import org.jabref.gui.newentry.NewEntryDialogTab;
 import org.jabref.gui.preferences.GuiPreferences;
 import org.jabref.gui.preferences.ShowPreferencesAction;
-import org.jabref.gui.preview.CopyCitationAction;
 import org.jabref.gui.preview.PreviewControls;
-import org.jabref.gui.push.PushToApplicationCommand;
+import org.jabref.gui.push.GuiPushToApplicationCommand;
 import org.jabref.gui.search.RebuildFulltextSearchIndexAction;
 import org.jabref.gui.shared.ConnectToSharedDatabaseCommand;
 import org.jabref.gui.shared.PullChangesFromSharedAction;
@@ -76,7 +81,7 @@ import org.jabref.gui.undo.UndoAction;
 import org.jabref.gui.util.URLs;
 import org.jabref.gui.util.UiTaskExecutor;
 import org.jabref.logic.ai.AiService;
-import org.jabref.logic.citationstyle.CitationStyleOutputFormat;
+import org.jabref.logic.git.util.GitHandlerRegistry;
 import org.jabref.logic.help.HelpFile;
 import org.jabref.logic.importer.IdFetcher;
 import org.jabref.logic.importer.WebFetchers;
@@ -88,11 +93,13 @@ import org.jabref.model.entry.BibEntryTypesManager;
 import org.jabref.model.entry.field.SpecialField;
 import org.jabref.model.util.FileUpdateMonitor;
 
+import com.airhacks.afterburner.injection.Injector;
+
 public class MainMenu extends MenuBar {
     private final JabRefFrame frame;
     private final FileHistoryMenu fileHistoryMenu;
     private final SidePane sidePane;
-    private final PushToApplicationCommand pushToApplicationCommand;
+    private final GuiPushToApplicationCommand pushToApplicationCommand;
     private final GuiPreferences preferences;
     private final StateManager stateManager;
     private final FileUpdateMonitor fileUpdateMonitor;
@@ -105,11 +112,12 @@ public class MainMenu extends MenuBar {
     private final Supplier<OpenDatabaseAction> openDatabaseActionSupplier;
     private final AiService aiService;
     private final PreviewControls previewControls;
+    private final GitHandlerRegistry gitHandlerRegistry;
 
     public MainMenu(JabRefFrame frame,
                     FileHistoryMenu fileHistoryMenu,
                     SidePane sidePane,
-                    PushToApplicationCommand pushToApplicationCommand,
+                    GuiPushToApplicationCommand pushToApplicationCommand,
                     GuiPreferences preferences,
                     StateManager stateManager,
                     FileUpdateMonitor fileUpdateMonitor,
@@ -121,7 +129,8 @@ public class MainMenu extends MenuBar {
                     ClipBoardManager clipBoardManager,
                     Supplier<OpenDatabaseAction> openDatabaseActionSupplier,
                     AiService aiService,
-                    PreviewControls previewControls) {
+                    PreviewControls previewControls,
+                    GitHandlerRegistry gitHandlerRegistry) {
         this.frame = frame;
         this.fileHistoryMenu = fileHistoryMenu;
         this.sidePane = sidePane;
@@ -138,6 +147,7 @@ public class MainMenu extends MenuBar {
         this.openDatabaseActionSupplier = openDatabaseActionSupplier;
         this.aiService = aiService;
         this.previewControls = previewControls;
+        this.gitHandlerRegistry = gitHandlerRegistry;
 
         createMenu();
     }
@@ -175,9 +185,21 @@ public class MainMenu extends MenuBar {
 
                 new SeparatorMenuItem(),
 
+                // region: Sharing of the library
+                // TODO: Should be only enabled if not yet shared.
+                factory.createSubMenu(StandardActions.GIT,
+                        factory.createMenuItem(StandardActions.GIT_COMMIT, new GitCommitAction(dialogService, stateManager)),
+                        factory.createMenuItem(StandardActions.GIT_PULL, new GitPullAction(dialogService, stateManager, preferences, taskExecutor, gitHandlerRegistry)),
+                        factory.createMenuItem(StandardActions.GIT_PUSH, new GitPushAction(dialogService, stateManager, preferences, taskExecutor, gitHandlerRegistry)),
+                        new SeparatorMenuItem(),
+                        factory.createMenuItem(StandardActions.GIT_SHARE, new GitShareToGitHubAction(dialogService, stateManager))
+                ),
+
                 factory.createSubMenu(StandardActions.REMOTE_DB,
                         factory.createMenuItem(StandardActions.CONNECT_TO_SHARED_DB, new ConnectToSharedDatabaseCommand(frame, dialogService)),
                         factory.createMenuItem(StandardActions.PULL_CHANGES_FROM_SHARED_DB, new PullChangesFromSharedAction(stateManager))),
+
+                // endregion
 
                 new SeparatorMenuItem(),
 
@@ -195,17 +217,8 @@ public class MainMenu extends MenuBar {
                 new SeparatorMenuItem(),
 
                 factory.createMenuItem(StandardActions.CUT, new EditAction(StandardActions.CUT, frame::getCurrentLibraryTab, stateManager, undoManager)),
-
                 factory.createMenuItem(StandardActions.COPY, new EditAction(StandardActions.COPY, frame::getCurrentLibraryTab, stateManager, undoManager)),
-                factory.createSubMenu(StandardActions.COPY_MORE,
-                        factory.createMenuItem(StandardActions.COPY_TITLE, new CopyMoreAction(StandardActions.COPY_TITLE, dialogService, stateManager, clipBoardManager, preferences, abbreviationRepository)),
-                        factory.createMenuItem(StandardActions.COPY_KEY, new CopyMoreAction(StandardActions.COPY_KEY, dialogService, stateManager, clipBoardManager, preferences, abbreviationRepository)),
-                        factory.createMenuItem(StandardActions.COPY_CITE_KEY, new CopyMoreAction(StandardActions.COPY_CITE_KEY, dialogService, stateManager, clipBoardManager, preferences, abbreviationRepository)),
-                        factory.createMenuItem(StandardActions.COPY_KEY_AND_TITLE, new CopyMoreAction(StandardActions.COPY_KEY_AND_TITLE, dialogService, stateManager, clipBoardManager, preferences, abbreviationRepository)),
-                        factory.createMenuItem(StandardActions.COPY_KEY_AND_LINK, new CopyMoreAction(StandardActions.COPY_KEY_AND_LINK, dialogService, stateManager, clipBoardManager, preferences, abbreviationRepository)),
-                        factory.createMenuItem(StandardActions.COPY_CITATION_PREVIEW, new CopyCitationAction(CitationStyleOutputFormat.HTML, dialogService, stateManager, clipBoardManager, taskExecutor, preferences, abbreviationRepository)),
-                        factory.createMenuItem(StandardActions.EXPORT_SELECTED_TO_CLIPBOARD, new ExportToClipboardAction(dialogService, stateManager, clipBoardManager, taskExecutor, preferences))),
-
+                RightClickMenu.createCopySubMenu(factory, dialogService, stateManager, preferences, clipBoardManager, abbreviationRepository, taskExecutor),
                 factory.createMenuItem(StandardActions.PASTE, new EditAction(StandardActions.PASTE, frame::getCurrentLibraryTab, stateManager, undoManager)),
 
                 new SeparatorMenuItem(),
@@ -233,16 +246,18 @@ public class MainMenu extends MenuBar {
         edit.addEventHandler(ActionEvent.ACTION, event -> {
             // Work around for mac only issue, where cmd+v on a dialogue triggers the paste action of menu item, resulting in addition of the pasted content in the MainTable.
             // If the mainscreen is not focused, the actions captured by menu are consumed.
-            if (OS.OS_X && !frame.getMainStage().focusedProperty().get()) {
+            boolean isStageUnfocused = !Injector.instantiateModelOrService(Stage.class).focusedProperty().get();
+
+            if (OS.OS_X && isStageUnfocused) {
                 event.consume();
             }
         });
 
         library.getItems().addAll(
-                factory.createMenuItem(StandardActions.CREATE_ENTRY_IMMEDIATE, new NewEntryAction(true, frame::getCurrentLibraryTab, dialogService, preferences, stateManager)),
-                factory.createMenuItem(StandardActions.CREATE_ENTRY, new NewEntryAction(false, frame::getCurrentLibraryTab, dialogService, preferences, stateManager)),
-                factory.createMenuItem(StandardActions.CREATE_ENTRY_IDENTIFIER, new NewEntryAction(NewEntryDialogTab.ENTER_IDENTIFIER, frame::getCurrentLibraryTab, dialogService, preferences, stateManager)),
-                factory.createMenuItem(StandardActions.CREATE_ENTRY_PLAINTEXT, new NewEntryAction(NewEntryDialogTab.INTERPRET_CITATIONS, frame::getCurrentLibraryTab, dialogService, preferences, stateManager)),
+                factory.createMenuItem(StandardActions.ADD_ENTRY_IMMEDIATE, new NewEntryAction(true, frame::getCurrentLibraryTab, dialogService, preferences, stateManager)),
+                factory.createMenuItem(StandardActions.ADD_ENTRY, new NewEntryAction(false, frame::getCurrentLibraryTab, dialogService, preferences, stateManager)),
+                factory.createMenuItem(StandardActions.ADD_ENTRY_IDENTIFIER, new NewEntryAction(NewEntryDialogTab.ENTER_IDENTIFIER, frame::getCurrentLibraryTab, dialogService, preferences, stateManager)),
+                factory.createMenuItem(StandardActions.ADD_ENTRY_PLAINTEXT, new NewEntryAction(NewEntryDialogTab.INTERPRET_CITATIONS, frame::getCurrentLibraryTab, dialogService, preferences, stateManager)),
                 factory.createMenuItem(StandardActions.DELETE_ENTRY, new EditAction(StandardActions.DELETE_ENTRY, frame::getCurrentLibraryTab, stateManager, undoManager)),
 
                 new SeparatorMenuItem(),
@@ -284,12 +299,24 @@ public class MainMenu extends MenuBar {
         }
 
         lookup.getItems().addAll(
+                // region identifier-related
                 lookupIdentifiers,
-                factory.createMenuItem(StandardActions.DOWNLOAD_FULL_TEXT, new DownloadFullTextAction(dialogService, stateManager, preferences, (UiTaskExecutor) taskExecutor)),
+
+                factory.createMenuItem(
+                        StandardActions.MERGE_WITH_FETCHED_ENTRY,
+                        new MergeWithFetchedEntryAction(dialogService, stateManager, taskExecutor, preferences, undoManager)),
+
+                factory.createMenuItem(
+                        StandardActions.BATCH_MERGE_WITH_FETCHED_ENTRY,
+                        new BatchEntryMergeWithFetchedDataAction(stateManager, undoManager, preferences, dialogService, taskExecutor)),
+                // endregion
 
                 new SeparatorMenuItem(),
 
+                // region file-related
+                factory.createMenuItem(StandardActions.DOWNLOAD_FULL_TEXT, new DownloadFullTextAction(dialogService, stateManager, preferences, (UiTaskExecutor) taskExecutor)),
                 factory.createMenuItem(StandardActions.FIND_UNLINKED_FILES, new FindUnlinkedFilesAction(dialogService, stateManager))
+                // endregion
         );
 
         final MenuItem pushToApplicationMenuItem = factory.createMenuItem(pushToApplicationCommand.getAction(), pushToApplicationCommand);
@@ -363,6 +390,7 @@ public class MainMenu extends MenuBar {
                 factory.createMenuItem(StandardActions.SEARCH_FOR_UPDATES, new SearchForUpdateAction(preferences, dialogService, taskExecutor)),
                 factory.createSubMenu(StandardActions.WEB_MENU,
                         factory.createMenuItem(StandardActions.OPEN_WEBPAGE, new OpenBrowserAction(URLs.WEBPAGE_URL, dialogService, preferences.getExternalApplicationsPreferences())),
+                        factory.createMenuItem(StandardActions.OPEN_PRIVACY_POLICY, new OpenBrowserAction(URLs.PRIVACY_POLICY_URL, dialogService, preferences.getExternalApplicationsPreferences())),
                         factory.createMenuItem(StandardActions.OPEN_BLOG, new OpenBrowserAction(URLs.BLOG_URL, dialogService, preferences.getExternalApplicationsPreferences())),
                         factory.createMenuItem(StandardActions.OPEN_LINKEDIN, new OpenBrowserAction(URLs.LINKEDIN_URL, dialogService, preferences.getExternalApplicationsPreferences())),
                         factory.createMenuItem(StandardActions.OPEN_FACEBOOK, new OpenBrowserAction(URLs.FACEBOOK_URL, dialogService, preferences.getExternalApplicationsPreferences())),
@@ -375,6 +403,8 @@ public class MainMenu extends MenuBar {
                         factory.createMenuItem(StandardActions.OPEN_CHANGELOG, new OpenBrowserAction(URLs.CHANGELOG_URL, dialogService, preferences.getExternalApplicationsPreferences()))
                 ),
 
+                new SeparatorMenuItem(),
+
                 factory.createMenuItem(StandardActions.OPEN_WELCOME_TAB, new SimpleCommand() {
                     @Override
                     public void execute() {
@@ -384,7 +414,7 @@ public class MainMenu extends MenuBar {
 
                 new SeparatorMenuItem(),
 
-                factory.createMenuItem(StandardActions.ABOUT, new AboutAction())
+                factory.createMenuItem(StandardActions.ABOUT, new AboutAction(dialogService))
         );
 
         // @formatter:on

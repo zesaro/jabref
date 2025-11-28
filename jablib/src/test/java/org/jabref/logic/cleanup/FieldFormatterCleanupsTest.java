@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.jabref.logic.formatter.Formatter;
 import org.jabref.logic.formatter.IdentityFormatter;
 import org.jabref.logic.formatter.bibtexfields.EscapeAmpersandsFormatter;
 import org.jabref.logic.formatter.bibtexfields.EscapeDollarSignFormatter;
@@ -338,6 +339,8 @@ public class FieldFormatterCleanupsTest {
                 date[normalize_date]
                 month[normalize_month]
                 all-text-fields[replace_unicode_ligatures]
+                keywords[MSC_codes_to_descriptions]
+                issn[normalize_issn]
                 """, FieldFormatterCleanups.getMetaDataString(FieldFormatterCleanups.DEFAULT_SAVE_ACTIONS, "\n"));
     }
 
@@ -348,6 +351,8 @@ public class FieldFormatterCleanupsTest {
                 date[normalize_date]
                 month[normalize_month]
                 all-text-fields[replace_unicode_ligatures]
+                keywords[MSC_codes_to_descriptions]
+                issn[normalize_issn]
                 """));
     }
 

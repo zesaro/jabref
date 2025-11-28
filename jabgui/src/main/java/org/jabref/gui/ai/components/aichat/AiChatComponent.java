@@ -3,8 +3,11 @@ package org.jabref.gui.ai.components.aichat;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
+import javafx.beans.Observable;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -12,6 +15,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -38,8 +42,10 @@ import org.jabref.model.entry.BibEntry;
 import org.jabref.model.util.ListUtil;
 
 import com.airhacks.afterburner.views.ViewLoader;
+import com.google.common.annotations.VisibleForTesting;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.ChatMessageType;
 import dev.langchain4j.data.message.UserMessage;
 import org.controlsfx.control.PopOver;
 import org.slf4j.Logger;
@@ -73,6 +79,9 @@ public class AiChatComponent extends VBox {
     @FXML private Hyperlink exQuestion2;
     @FXML private Hyperlink exQuestion3;
     @FXML private HBox exQuestionBox;
+    @FXML private HBox followUpQuestionsBox;
+
+    private String noticeTemplate;
 
     public AiChatComponent(AiService aiService,
                            StringProperty name,
@@ -95,8 +104,8 @@ public class AiChatComponent extends VBox {
         aiService.getIngestionService().ingest(name, ListUtil.getLinkedFiles(entries).toList(), bibDatabaseContext);
 
         ViewLoader.view(this)
-                .root(this)
-                .load();
+                  .root(this)
+                  .load();
     }
 
     @FXML
@@ -107,6 +116,7 @@ public class AiChatComponent extends VBox {
         initializeNotifications();
         sendExampleQuestions();
         initializeExampleQuestions();
+        initializeFollowUpQuestions();
     }
 
     private void initializeNotifications() {
@@ -117,11 +127,27 @@ public class AiChatComponent extends VBox {
     }
 
     private void initializeNotice() {
-        String newNotice = noticeText
-                .getText()
-                .replaceAll("%0", aiPreferences.getAiProvider().getLabel() + " " + aiPreferences.getSelectedChatModel());
+        this.noticeTemplate = noticeText.getText();
 
-        noticeText.setText(newNotice);
+        noticeText.textProperty().bind(Bindings.createStringBinding(this::computeNoticeText, noticeDependencies()));
+    }
+
+    @VisibleForTesting
+    String computeNoticeText() {
+        String provider = aiPreferences.getAiProvider().getLabel();
+        String model = aiPreferences.getSelectedChatModel();
+        return noticeTemplate.replace("%0", provider + " " + model);
+    }
+
+    private Observable[] noticeDependencies() {
+        return new Observable[] {
+                aiPreferences.aiProviderProperty(),
+                aiPreferences.openAiChatModelProperty(),
+                aiPreferences.mistralAiChatModelProperty(),
+                aiPreferences.geminiChatModelProperty(),
+                aiPreferences.huggingFaceChatModelProperty(),
+                aiPreferences.gpt4AllChatModelProperty()
+        };
     }
 
     private void initializeExampleQuestions() {
@@ -170,9 +196,61 @@ public class AiChatComponent extends VBox {
             onSendMessage(userMessage);
         });
 
+        chatPrompt.setRegenerateCallback(() -> {
+            setLoading(true);
+            Optional<UserMessage> lastUserPrompt = Optional.empty();
+            if (!aiChatLogic.getChatHistory().isEmpty()) {
+                lastUserPrompt = getLastUserMessage();
+            }
+            if (lastUserPrompt.isPresent()) {
+                while (aiChatLogic.getChatHistory().getLast().type() != ChatMessageType.USER) {
+                    deleteLastMessage();
+                }
+                deleteLastMessage();
+                chatPrompt.switchToNormalState();
+                onSendMessage(lastUserPrompt.get().singleText());
+            }
+        });
+
         chatPrompt.requestPromptFocus();
 
         updatePromptHistory();
+    }
+
+    private void initializeFollowUpQuestions() {
+        aiChatLogic.getFollowUpQuestions().addListener((javafx.collections.ListChangeListener<String>) change -> {
+            updateFollowUpQuestions();
+        });
+    }
+
+    private void updateFollowUpQuestions() {
+        List<String> questions = new ArrayList<>(aiChatLogic.getFollowUpQuestions());
+
+        UiTaskExecutor.runInJavaFXThread(() -> {
+            followUpQuestionsBox.getChildren().removeIf(node -> node instanceof Hyperlink);
+
+            if (questions.isEmpty()) {
+                followUpQuestionsBox.setVisible(false);
+                followUpQuestionsBox.setManaged(false);
+                exQuestionBox.setVisible(true);
+                exQuestionBox.setManaged(true);
+            } else {
+                followUpQuestionsBox.setVisible(true);
+                followUpQuestionsBox.setManaged(true);
+                exQuestionBox.setVisible(false);
+                exQuestionBox.setManaged(false);
+
+                for (String question : questions) {
+                    Hyperlink link = new Hyperlink(question);
+                    link.getStyleClass().add("exampleQuestionStyle");
+                    link.setTooltip(new Tooltip(question));
+                    link.setOnAction(event -> {
+                        onSendMessage(question);
+                    });
+                    followUpQuestionsBox.getChildren().add(link);
+                }
+            }
+        });
     }
 
     private void updateNotifications() {
@@ -215,10 +293,11 @@ public class AiChatComponent extends VBox {
 
         entry.getFiles().stream().map(file -> aiService.getIngestionService().ingest(file, bibDatabaseContext)).forEach(ingestionStatus -> {
             switch (ingestionStatus.getState()) {
-                case PROCESSING -> notifications.add(new Notification(
-                    Localization.lang("File %0 is currently being processed", ingestionStatus.getObject().getLink()),
-                    Localization.lang("After the file is ingested, you will be able to chat with it.")
-                ));
+                case PROCESSING ->
+                        notifications.add(new Notification(
+                                Localization.lang("File %0 is currently being processed", ingestionStatus.getObject().getLink()),
+                                Localization.lang("After the file is ingested, you will be able to chat with it.")
+                        ));
 
                 case ERROR -> {
                     assert ingestionStatus.getException().isPresent(); // When the state is ERROR, the exception must be present.
@@ -229,7 +308,8 @@ public class AiChatComponent extends VBox {
                     ));
                 }
 
-                case SUCCESS -> { }
+                case SUCCESS -> {
+                }
             }
         });
 
@@ -237,6 +317,13 @@ public class AiChatComponent extends VBox {
     }
 
     private void onSendMessage(String userPrompt) {
+        aiChatLogic.getFollowUpQuestions().clear();
+
+        UiTaskExecutor.runInJavaFXThread(() -> {
+            exQuestionBox.setVisible(false);
+            exQuestionBox.setManaged(false);
+        });
+
         UserMessage userMessage = new UserMessage(userPrompt);
         updatePromptHistory();
         setLoading(true);
@@ -310,5 +397,17 @@ public class AiChatComponent extends VBox {
             int index = aiChatLogic.getChatHistory().size() - 1;
             aiChatLogic.getChatHistory().remove(index);
         }
+    }
+
+    private Optional<UserMessage> getLastUserMessage() {
+        int messageIndex = aiChatLogic.getChatHistory().size() - 1;
+        while (messageIndex >= 0) {
+            ChatMessage chat = aiChatLogic.getChatHistory().get(messageIndex);
+            if (chat.type() == ChatMessageType.USER) {
+                return Optional.of((UserMessage) chat);
+            }
+            messageIndex--;
+        }
+        return Optional.empty();
     }
 }

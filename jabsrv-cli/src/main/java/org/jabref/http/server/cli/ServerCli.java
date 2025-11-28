@@ -1,6 +1,7 @@
 package org.jabref.http.server.cli;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ public class ServerCli implements Callable<Void> {
     private String host = "localhost";
 
     @CommandLine.Option(names = {"-p", "--port"}, description = "the port")
-    private Integer port = 6050;
+    private Integer port = 23119;
 
     /**
      * Starts an http server serving the last files opened in JabRef<br>
@@ -44,15 +45,15 @@ public class ServerCli implements Callable<Void> {
 
     @Override
     public Void call() throws InterruptedException {
-        // The server serves the last opened files (see org.jabref.http.server.LibraryResource.getLibraryPath)
+        // The server serves the last opened files (see org.jabref.http.server.resources.LibraryResource.getLibraryPath)
         final List<Path> filesToServe = new ArrayList<>(JabRefCliPreferences.getInstance().getLastFilesOpenedPreferences().getLastFilesOpened());
 
         // Additionally, files can be provided as args
         if (files != null) {
             List<Path> filesToAdd = files.stream()
-                                          .filter(Files::exists)
-                                          .filter(path -> !filesToServe.contains(path))
-                                          .toList();
+                                         .filter(Files::exists)
+                                         .filter(path -> !filesToServe.contains(path))
+                                         .toList();
             LOGGER.info("Adding following files to the list of opened libraries: {}", filesToAdd);
             filesToServe.addAll(0, filesToAdd);
         }
@@ -67,7 +68,13 @@ public class ServerCli implements Callable<Void> {
         LOGGER.debug("Libraries to serve: {}", filesToServe);
 
         String url = "http://" + host + ":" + port + "/";
-        URI uri = URI.create(url);
+        URI uri;
+        try {
+            uri = new URI(url);
+        } catch (URISyntaxException e) {
+            LOGGER.error("Invalid URL: {}", url);
+            return null;
+        }
 
         Server server = new Server();
         HttpServer httpServer = server.run(filesToServe, uri);

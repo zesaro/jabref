@@ -18,6 +18,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
+import javafx.scene.control.SpinnerValueFactory;
 
 import org.jabref.gui.preferences.PreferenceTabViewModel;
 import org.jabref.logic.ai.AiDefaultPreferences;
@@ -26,9 +27,10 @@ import org.jabref.logic.ai.templates.AiTemplate;
 import org.jabref.logic.l10n.Localization;
 import org.jabref.logic.preferences.CliPreferences;
 import org.jabref.logic.util.LocalizedNumbers;
+import org.jabref.logic.util.OptionalObjectProperty;
+import org.jabref.logic.util.strings.StringUtil;
 import org.jabref.model.ai.AiProvider;
 import org.jabref.model.ai.EmbeddingModel;
-import org.jabref.model.strings.StringUtil;
 
 import de.saxsys.mvvmfx.utils.validation.FunctionBasedValidator;
 import de.saxsys.mvvmfx.utils.validation.ValidationMessage;
@@ -36,6 +38,8 @@ import de.saxsys.mvvmfx.utils.validation.ValidationStatus;
 import de.saxsys.mvvmfx.utils.validation.Validator;
 
 public class AiTabViewModel implements PreferenceTabViewModel {
+    protected static SpinnerValueFactory<Integer> followUpQuestionsCountValueFactory = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 5, 3);
+
     private final Locale oldLocale;
 
     private final BooleanProperty enableAi = new SimpleBooleanProperty();
@@ -43,6 +47,8 @@ public class AiTabViewModel implements PreferenceTabViewModel {
     private final BooleanProperty disableAutoGenerateEmbeddings = new SimpleBooleanProperty();
     private final BooleanProperty autoGenerateSummaries = new SimpleBooleanProperty();
     private final BooleanProperty disableAutoGenerateSummaries = new SimpleBooleanProperty();
+    private final BooleanProperty generateFollowUpQuestions = new SimpleBooleanProperty();
+    private final IntegerProperty followUpQuestionsCount = new SimpleIntegerProperty();
 
     private final ListProperty<AiProvider> aiProvidersList =
             new SimpleListProperty<>(FXCollections.observableArrayList(AiProvider.values()));
@@ -85,9 +91,16 @@ public class AiTabViewModel implements PreferenceTabViewModel {
     private final Map<AiTemplate, StringProperty> templateSources = Map.of(
             AiTemplate.CHATTING_SYSTEM_MESSAGE, new SimpleStringProperty(),
             AiTemplate.CHATTING_USER_MESSAGE, new SimpleStringProperty(),
-            AiTemplate.SUMMARIZATION_CHUNK, new SimpleStringProperty(),
-            AiTemplate.SUMMARIZATION_COMBINE, new SimpleStringProperty()
+            AiTemplate.SUMMARIZATION_CHUNK_SYSTEM_MESSAGE, new SimpleStringProperty(),
+            AiTemplate.SUMMARIZATION_CHUNK_USER_MESSAGE, new SimpleStringProperty(),
+            AiTemplate.SUMMARIZATION_COMBINE_SYSTEM_MESSAGE, new SimpleStringProperty(),
+            AiTemplate.SUMMARIZATION_COMBINE_USER_MESSAGE, new SimpleStringProperty(),
+            AiTemplate.CITATION_PARSING_SYSTEM_MESSAGE, new SimpleStringProperty(),
+            AiTemplate.CITATION_PARSING_USER_MESSAGE, new SimpleStringProperty(),
+            AiTemplate.FOLLOW_UP_QUESTIONS, new SimpleStringProperty()
     );
+
+    private final OptionalObjectProperty<AiTemplate> selectedTemplate = OptionalObjectProperty.empty();
 
     private final StringProperty temperature = new SimpleStringProperty();
     private final IntegerProperty contextWindowSize = new SimpleIntegerProperty();
@@ -125,7 +138,7 @@ public class AiTabViewModel implements PreferenceTabViewModel {
         });
 
         this.customizeExpertSettings.addListener((_, _, newValue) ->
-            disableExpertSettings.set(!newValue || !enableAi.get())
+                disableExpertSettings.set(!newValue || !enableAi.get())
         );
 
         this.selectedAiProvider.addListener((_, oldValue, newValue) -> {
@@ -161,7 +174,7 @@ public class AiTabViewModel implements PreferenceTabViewModel {
                         huggingFaceApiKey.set(currentApiKey.get());
                         huggingFaceApiBaseUrl.set(currentApiBaseUrl.get());
                     }
-                    case GPT4ALL-> {
+                    case GPT4ALL -> {
                         gpt4AllChatModel.set(oldChatModel);
                         gpt4AllApiKey.set(currentApiKey.get());
                         gpt4AllApiBaseUrl.set(currentApiBaseUrl.get());
@@ -204,11 +217,16 @@ public class AiTabViewModel implements PreferenceTabViewModel {
             }
 
             switch (selectedAiProvider.get()) {
-                case OPEN_AI -> openAiChatModel.set(newValue);
-                case MISTRAL_AI -> mistralAiChatModel.set(newValue);
-                case GEMINI -> geminiChatModel.set(newValue);
-                case HUGGING_FACE -> huggingFaceChatModel.set(newValue);
-                case GPT4ALL -> gpt4AllChatModel.set(newValue);
+                case OPEN_AI ->
+                        openAiChatModel.set(newValue);
+                case MISTRAL_AI ->
+                        mistralAiChatModel.set(newValue);
+                case GEMINI ->
+                        geminiChatModel.set(newValue);
+                case HUGGING_FACE ->
+                        huggingFaceChatModel.set(newValue);
+                case GPT4ALL ->
+                        gpt4AllChatModel.set(newValue);
             }
 
             contextWindowSize.set(AiDefaultPreferences.getContextWindowSize(selectedAiProvider.get(), newValue));
@@ -216,21 +234,31 @@ public class AiTabViewModel implements PreferenceTabViewModel {
 
         this.currentApiKey.addListener((_, _, newValue) -> {
             switch (selectedAiProvider.get()) {
-                case OPEN_AI -> openAiApiKey.set(newValue);
-                case MISTRAL_AI -> mistralAiApiKey.set(newValue);
-                case GEMINI -> geminiAiApiKey.set(newValue);
-                case HUGGING_FACE -> huggingFaceApiKey.set(newValue);
-                case GPT4ALL -> gpt4AllApiKey.set(newValue);
+                case OPEN_AI ->
+                        openAiApiKey.set(newValue);
+                case MISTRAL_AI ->
+                        mistralAiApiKey.set(newValue);
+                case GEMINI ->
+                        geminiAiApiKey.set(newValue);
+                case HUGGING_FACE ->
+                        huggingFaceApiKey.set(newValue);
+                case GPT4ALL ->
+                        gpt4AllApiKey.set(newValue);
             }
         });
 
         this.currentApiBaseUrl.addListener((_, _, newValue) -> {
             switch (selectedAiProvider.get()) {
-                case OPEN_AI -> openAiApiBaseUrl.set(newValue);
-                case MISTRAL_AI -> mistralAiApiBaseUrl.set(newValue);
-                case GEMINI -> geminiApiBaseUrl.set(newValue);
-                case HUGGING_FACE -> huggingFaceApiBaseUrl.set(newValue);
-                case GPT4ALL -> gpt4AllApiBaseUrl.set(newValue);
+                case OPEN_AI ->
+                        openAiApiBaseUrl.set(newValue);
+                case MISTRAL_AI ->
+                        mistralAiApiBaseUrl.set(newValue);
+                case GEMINI ->
+                        geminiApiBaseUrl.set(newValue);
+                case HUGGING_FACE ->
+                        huggingFaceApiBaseUrl.set(newValue);
+                case GPT4ALL ->
+                        gpt4AllApiBaseUrl.set(newValue);
             }
         });
 
@@ -319,6 +347,8 @@ public class AiTabViewModel implements PreferenceTabViewModel {
         enableAi.setValue(aiPreferences.getEnableAi());
         autoGenerateSummaries.setValue(aiPreferences.getAutoGenerateSummaries());
         autoGenerateEmbeddings.setValue(aiPreferences.getAutoGenerateEmbeddings());
+        generateFollowUpQuestions.setValue(aiPreferences.getGenerateFollowUpQuestions());
+        followUpQuestionsCount.setValue(aiPreferences.getFollowUpQuestionsCount());
 
         selectedAiProvider.setValue(aiPreferences.getAiProvider());
 
@@ -342,6 +372,8 @@ public class AiTabViewModel implements PreferenceTabViewModel {
         aiPreferences.setEnableAi(enableAi.get());
         aiPreferences.setAutoGenerateEmbeddings(autoGenerateEmbeddings.get());
         aiPreferences.setAutoGenerateSummaries(autoGenerateSummaries.get());
+        aiPreferences.setGenerateFollowUpQuestions(generateFollowUpQuestions.get());
+        aiPreferences.setFollowUpQuestionsCount(followUpQuestionsCount.get());
 
         aiPreferences.setAiProvider(selectedAiProvider.get());
 
@@ -392,11 +424,19 @@ public class AiTabViewModel implements PreferenceTabViewModel {
         documentSplitterOverlapSize.set(AiDefaultPreferences.DOCUMENT_SPLITTER_OVERLAP);
         ragMaxResultsCount.set(AiDefaultPreferences.RAG_MAX_RESULTS_COUNT);
         ragMinScore.set(LocalizedNumbers.doubleToString(AiDefaultPreferences.RAG_MIN_SCORE));
+        followUpQuestionsCount.set(AiDefaultPreferences.FOLLOW_UP_QUESTIONS_COUNT);
     }
 
     public void resetTemplates() {
         Arrays.stream(AiTemplate.values()).forEach(template ->
                 templateSources.get(template).set(AiDefaultPreferences.TEMPLATES.get(template)));
+    }
+
+    public void resetCurrentTemplate() {
+        selectedTemplateProperty().get().ifPresent(template -> {
+            String defaultTemplate = AiDefaultPreferences.TEMPLATES.get(template);
+            templateSources.get(template).set(defaultTemplate);
+        });
     }
 
     @Override
@@ -458,6 +498,18 @@ public class AiTabViewModel implements PreferenceTabViewModel {
         return disableAutoGenerateSummaries;
     }
 
+    public BooleanProperty generateFollowUpQuestions() {
+        return generateFollowUpQuestions;
+    }
+
+    public IntegerProperty followUpQuestionsCountProperty() {
+        return followUpQuestionsCount;
+    }
+
+    public StringProperty followUpQuestionsTemplateProperty() {
+        return aiPreferences.templateProperty(AiTemplate.FOLLOW_UP_QUESTIONS);
+    }
+
     public ReadOnlyListProperty<AiProvider> aiProvidersProperty() {
         return aiProvidersList;
     }
@@ -500,6 +552,10 @@ public class AiTabViewModel implements PreferenceTabViewModel {
 
     public Map<AiTemplate, StringProperty> getTemplateSources() {
         return templateSources;
+    }
+
+    public OptionalObjectProperty<AiTemplate> selectedTemplateProperty() {
+        return selectedTemplate;
     }
 
     public StringProperty temperatureProperty() {

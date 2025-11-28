@@ -1,13 +1,16 @@
 package org.jabref.logic.importer.util;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringWriter;
 
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
@@ -18,9 +21,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @AllowedToUseClassGetResource("to determine the root directory")
-public class MathMLParser {
+public final class MathMLParser {
     private static final Logger LOGGER = LoggerFactory.getLogger(MathMLParser.class);
     private static final String XSLT_FILE_PATH = "/xslt/mathml_latex/mmltex.xsl";
+
+    private MathMLParser() {
+        throw new UnsupportedOperationException("Cannot instantiate a utility class");
+    }
 
     /**
      * Parses the MathML element into its corresponding
@@ -51,12 +58,12 @@ public class MathMLParser {
             transformer.transform(xmlSource, result);
 
             latexResult = writer.getBuffer().toString();
-        } catch (Exception e) {
+        } catch (XMLStreamException
+                 | TransformerException
+                 | IOException e) {
             LOGGER.error("Could not transform", e);
             return "<Unsupported MathML expression>";
         }
-
         return latexResult;
     }
 }
-

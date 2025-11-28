@@ -1,14 +1,17 @@
 package org.jabref.logic.importer;
 
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -29,6 +32,8 @@ public class ImporterPreferences {
     private final BooleanProperty persistCustomKeys;
     private final ObservableList<String> catalogs;
     private final ObjectProperty<PlainCitationParserChoice> defaultPlainCitationParser;
+    private final IntegerProperty citationsRelationsStoreTTL;
+    private final Map<String, String> searchEngineUrlTemplates;
 
     public ImporterPreferences(boolean importerEnabled,
                                boolean generateNewKeyOnImport,
@@ -39,7 +44,9 @@ public class ImporterPreferences {
                                Map<String, String> defaultApiKeys,
                                boolean persistCustomKeys,
                                List<String> catalogs,
-                               PlainCitationParserChoice defaultPlainCitationParser
+                               PlainCitationParserChoice defaultPlainCitationParser,
+                               int citationsRelationsStoreTTL,
+                               Map<String, String> searchEngineUrlTemplates
     ) {
         this.importerEnabled = new SimpleBooleanProperty(importerEnabled);
         this.generateNewKeyOnImport = new SimpleBooleanProperty(generateNewKeyOnImport);
@@ -51,6 +58,8 @@ public class ImporterPreferences {
         this.persistCustomKeys = new SimpleBooleanProperty(persistCustomKeys);
         this.catalogs = FXCollections.observableArrayList(catalogs);
         this.defaultPlainCitationParser = new SimpleObjectProperty<>(defaultPlainCitationParser);
+        this.citationsRelationsStoreTTL = new SimpleIntegerProperty(citationsRelationsStoreTTL);
+        this.searchEngineUrlTemplates = new HashMap<>(searchEngineUrlTemplates);
     }
 
     public boolean areImporterEnabled() {
@@ -126,10 +135,9 @@ public class ImporterPreferences {
         this.persistCustomKeys.set(persistCustomKeys);
     }
 
-    /**
-     * @param name of the fetcher
-     * @return either a customized API key if configured or the default key
-     */
+    /// @param name of the fetcher
+    /// @return either a customized API key if configured or the default key
+    /// @implNote See `fetchers.md` for general information on fetchers.
     public Optional<String> getApiKey(String name) {
         return apiKeys.stream()
                       .filter(key -> key.getName().equalsIgnoreCase(name))
@@ -145,7 +153,7 @@ public class ImporterPreferences {
     }
 
     public ObservableList<String> getCatalogs() {
-          return catalogs;
+        return catalogs;
     }
 
     public PlainCitationParserChoice getDefaultPlainCitationParser() {
@@ -158,5 +166,26 @@ public class ImporterPreferences {
 
     public void setDefaultPlainCitationParser(PlainCitationParserChoice defaultPlainCitationParser) {
         this.defaultPlainCitationParser.set(defaultPlainCitationParser);
+    }
+
+    public int getCitationsRelationsStoreTTL() {
+        return this.citationsRelationsStoreTTL.get();
+    }
+
+    public IntegerProperty citationsRelationsStoreTTLProperty() {
+        return this.citationsRelationsStoreTTL;
+    }
+
+    public void setCitationsRelationsStoreTTL(int citationsRelationsStoreTTL) {
+        this.citationsRelationsStoreTTL.set(citationsRelationsStoreTTL);
+    }
+
+    public Map<String, String> getSearchEngineUrlTemplates() {
+        return searchEngineUrlTemplates;
+    }
+
+    public void setSearchEngineUrlTemplates(Map<String, String> templates) {
+        searchEngineUrlTemplates.clear();
+        searchEngineUrlTemplates.putAll(templates);
     }
 }

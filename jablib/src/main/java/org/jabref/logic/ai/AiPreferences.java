@@ -17,9 +17,9 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
 import org.jabref.logic.ai.templates.AiTemplate;
+import org.jabref.logic.util.strings.StringUtil;
 import org.jabref.model.ai.AiProvider;
 import org.jabref.model.ai.EmbeddingModel;
-import org.jabref.model.strings.StringUtil;
 
 import com.github.javakeyring.Keyring;
 import com.github.javakeyring.PasswordAccessException;
@@ -35,6 +35,8 @@ public class AiPreferences {
     private final BooleanProperty enableAi;
     private final BooleanProperty autoGenerateEmbeddings;
     private final BooleanProperty autoGenerateSummaries;
+    private final BooleanProperty generateFollowUpQuestions;
+    private final IntegerProperty followUpQuestionsCount;
 
     private final ObjectProperty<AiProvider> aiProvider;
 
@@ -53,7 +55,6 @@ public class AiPreferences {
     private final StringProperty gpt4AllApiBaseUrl;
 
     private final ObjectProperty<EmbeddingModel> embeddingModel;
-    private final StringProperty instruction;
     private final DoubleProperty temperature;
     private final IntegerProperty contextWindowSize;
     private final IntegerProperty documentSplitterChunkSize;
@@ -68,6 +69,8 @@ public class AiPreferences {
     public AiPreferences(boolean enableAi,
                          boolean autoGenerateEmbeddings,
                          boolean autoGenerateSummaries,
+                         boolean generateFollowUpQuestions,
+                         int followUpQuestionsCount,
                          AiProvider aiProvider,
                          String openAiChatModel,
                          String mistralAiChatModel,
@@ -81,7 +84,6 @@ public class AiPreferences {
                          String huggingFaceApiBaseUrl,
                          String gpt4AllApiBaseUrl,
                          EmbeddingModel embeddingModel,
-                         String instruction,
                          double temperature,
                          int contextWindowSize,
                          int documentSplitterChunkSize,
@@ -93,6 +95,8 @@ public class AiPreferences {
         this.enableAi = new SimpleBooleanProperty(enableAi);
         this.autoGenerateEmbeddings = new SimpleBooleanProperty(autoGenerateEmbeddings);
         this.autoGenerateSummaries = new SimpleBooleanProperty(autoGenerateSummaries);
+        this.generateFollowUpQuestions = new SimpleBooleanProperty(generateFollowUpQuestions);
+        this.followUpQuestionsCount = new SimpleIntegerProperty(followUpQuestionsCount);
 
         this.aiProvider = new SimpleObjectProperty<>(aiProvider);
 
@@ -111,7 +115,6 @@ public class AiPreferences {
         this.gpt4AllApiBaseUrl = new SimpleStringProperty(gpt4AllApiBaseUrl);
 
         this.embeddingModel = new SimpleObjectProperty<>(embeddingModel);
-        this.instruction = new SimpleStringProperty(instruction);
         this.temperature = new SimpleDoubleProperty(temperature);
         this.contextWindowSize = new SimpleIntegerProperty(contextWindowSize);
         this.documentSplitterChunkSize = new SimpleIntegerProperty(documentSplitterChunkSize);
@@ -119,11 +122,19 @@ public class AiPreferences {
         this.ragMaxResultsCount = new SimpleIntegerProperty(ragMaxResultsCount);
         this.ragMinScore = new SimpleDoubleProperty(ragMinScore);
 
+        this.apiKeyChangeListener = () -> {
+        };
+
         this.templates = Map.of(
                 AiTemplate.CHATTING_SYSTEM_MESSAGE, new SimpleStringProperty(templates.get(AiTemplate.CHATTING_SYSTEM_MESSAGE)),
                 AiTemplate.CHATTING_USER_MESSAGE, new SimpleStringProperty(templates.get(AiTemplate.CHATTING_USER_MESSAGE)),
-                AiTemplate.SUMMARIZATION_CHUNK, new SimpleStringProperty(templates.get(AiTemplate.SUMMARIZATION_CHUNK)),
-                AiTemplate.SUMMARIZATION_COMBINE, new SimpleStringProperty(templates.get(AiTemplate.SUMMARIZATION_COMBINE))
+                AiTemplate.SUMMARIZATION_CHUNK_SYSTEM_MESSAGE, new SimpleStringProperty(templates.get(AiTemplate.SUMMARIZATION_CHUNK_SYSTEM_MESSAGE)),
+                AiTemplate.SUMMARIZATION_CHUNK_USER_MESSAGE, new SimpleStringProperty(templates.get(AiTemplate.SUMMARIZATION_CHUNK_USER_MESSAGE)),
+                AiTemplate.SUMMARIZATION_COMBINE_SYSTEM_MESSAGE, new SimpleStringProperty(templates.get(AiTemplate.SUMMARIZATION_COMBINE_SYSTEM_MESSAGE)),
+                AiTemplate.SUMMARIZATION_COMBINE_USER_MESSAGE, new SimpleStringProperty(templates.get(AiTemplate.SUMMARIZATION_COMBINE_USER_MESSAGE)),
+                AiTemplate.CITATION_PARSING_SYSTEM_MESSAGE, new SimpleStringProperty(templates.get(AiTemplate.CITATION_PARSING_SYSTEM_MESSAGE)),
+                AiTemplate.CITATION_PARSING_USER_MESSAGE, new SimpleStringProperty(templates.get(AiTemplate.CITATION_PARSING_USER_MESSAGE)),
+                AiTemplate.FOLLOW_UP_QUESTIONS, new SimpleStringProperty(templates.get(AiTemplate.FOLLOW_UP_QUESTIONS))
         );
     }
 
@@ -189,6 +200,30 @@ public class AiPreferences {
 
     public void setAutoGenerateSummaries(boolean autoGenerateSummaries) {
         this.autoGenerateSummaries.set(autoGenerateSummaries);
+    }
+
+    public BooleanProperty generateFollowUpQuestionsProperty() {
+        return generateFollowUpQuestions;
+    }
+
+    public IntegerProperty followUpQuestionsCountProperty() {
+        return followUpQuestionsCount;
+    }
+
+    public int getFollowUpQuestionsCount() {
+        return followUpQuestionsCount.get();
+    }
+
+    public void setFollowUpQuestionsCount(int followUpQuestionsCount) {
+        this.followUpQuestionsCount.set(followUpQuestionsCount);
+    }
+
+    public boolean getGenerateFollowUpQuestions() {
+        return generateFollowUpQuestions.get();
+    }
+
+    public void setGenerateFollowUpQuestions(boolean generateFollowUpQuestions) {
+        this.generateFollowUpQuestions.set(generateFollowUpQuestions);
     }
 
     public ObjectProperty<AiProvider> aiProviderProperty() {
@@ -351,22 +386,6 @@ public class AiPreferences {
         this.gpt4AllApiBaseUrl.set(gpt4AllApiBaseUrl);
     }
 
-    public StringProperty instructionProperty() {
-        return instruction;
-    }
-
-    public String getInstruction() {
-        if (getCustomizeExpertSettings()) {
-            return instruction.get();
-        } else {
-            return AiDefaultPreferences.SYSTEM_MESSAGE;
-        }
-    }
-
-    public void setInstruction(String instruction) {
-        this.instruction.set(instruction);
-    }
-
     public DoubleProperty temperatureProperty() {
         return temperature;
     }
@@ -392,11 +411,16 @@ public class AiPreferences {
             return contextWindowSize.get();
         } else {
             return switch (aiProvider.get()) {
-                case OPEN_AI -> AiDefaultPreferences.getContextWindowSize(AiProvider.OPEN_AI, openAiChatModel.get());
-                case MISTRAL_AI -> AiDefaultPreferences.getContextWindowSize(AiProvider.MISTRAL_AI, mistralAiChatModel.get());
-                case HUGGING_FACE -> AiDefaultPreferences.getContextWindowSize(AiProvider.HUGGING_FACE, huggingFaceChatModel.get());
-                case GEMINI -> AiDefaultPreferences.getContextWindowSize(AiProvider.GEMINI, geminiChatModel.get());
-                case GPT4ALL -> AiDefaultPreferences.getContextWindowSize(AiProvider.GPT4ALL, gpt4AllChatModel.get());
+                case OPEN_AI ->
+                        AiDefaultPreferences.getContextWindowSize(AiProvider.OPEN_AI, openAiChatModel.get());
+                case MISTRAL_AI ->
+                        AiDefaultPreferences.getContextWindowSize(AiProvider.MISTRAL_AI, mistralAiChatModel.get());
+                case HUGGING_FACE ->
+                        AiDefaultPreferences.getContextWindowSize(AiProvider.HUGGING_FACE, huggingFaceChatModel.get());
+                case GEMINI ->
+                        AiDefaultPreferences.getContextWindowSize(AiProvider.GEMINI, geminiChatModel.get());
+                case GPT4ALL ->
+                        AiDefaultPreferences.getContextWindowSize(AiProvider.GPT4ALL, gpt4AllChatModel.get());
             };
         }
     }
@@ -560,14 +584,14 @@ public class AiPreferences {
     }
 
     public void setTemplate(AiTemplate aiTemplate, String template) {
-        templates.get(aiTemplate).set(template);
+        templateProperty(aiTemplate).set(template);
     }
 
     public String getTemplate(AiTemplate aiTemplate) {
-        return templates.get(aiTemplate).get();
+        return templateProperty(aiTemplate).get();
     }
 
     public StringProperty templateProperty(AiTemplate aiTemplate) {
-        return templates.get(aiTemplate);
+        return templates.getOrDefault(aiTemplate, new SimpleStringProperty(""));
     }
 }
