@@ -650,8 +650,8 @@ public class JabRefCliPreferences implements CliPreferences {
         defaults.put(OO_EXTERNAL_CSL_STYLES, "");
         defaults.put(OO_ADD_SPACE_AFTER, Boolean.TRUE);
 
-        defaults.put(FETCHER_CUSTOM_KEY_NAMES, "Springer;IEEEXplore;SAO/NASA ADS;ScienceDirect;Biodiversity Heritage");
-        defaults.put(FETCHER_CUSTOM_KEY_USES, "FALSE;FALSE;FALSE;FALSE;FALSE");
+        defaults.put(FETCHER_CUSTOM_KEY_NAMES, "Springer;IEEEXplore;SAO/NASA ADS;ScienceDirect;Biodiversity Heritage;BibSonomy");
+        defaults.put(FETCHER_CUSTOM_KEY_USES, "FALSE;FALSE;FALSE;FALSE;FALSE;FALSE");
         defaults.put(FETCHER_CUSTOM_KEY_PERSIST, Boolean.FALSE);
 
         defaults.put(USE_OWNER, Boolean.FALSE);
