@@ -10,4 +10,7 @@ repositories {
     maven { url = uri("https://sandec.jfrog.io/artifactory/repo") }
 
     maven { url = rootDir.resolve("jablib/lib").toURI() }
+
+    // Required for org.bibsonomy:bibsonomy-rest-client
+    maven { url = uri("https://www.bibsonomy.org/maven2/") }
 }

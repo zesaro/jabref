@@ -259,6 +259,7 @@ open module org.jabref.jablib {
     // endregion
 
     // region: other libraries (alphabetically)
+    requires org.bibsonomy.restclient;
     requires cuid;
     requires com.dd.plist;
     requires io.github.darvil.terminal.textformatter;
