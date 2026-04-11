@@ -1,7 +1,5 @@
 package org.jabref.gui.preferences.websearch;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -38,15 +36,12 @@ import org.jabref.logic.importer.fetcher.CustomizableKeyFetcher;
 import org.jabref.logic.importer.plaincitation.PlainCitationParserChoice;
 import org.jabref.logic.importer.util.GrobidPreferences;
 import org.jabref.logic.l10n.Localization;
-import org.jabref.logic.net.URLDownload;
 import org.jabref.logic.os.OS;
 import org.jabref.logic.preferences.CliPreferences;
 import org.jabref.logic.preferences.DOIPreferences;
 import org.jabref.logic.preferences.FetcherApiKey;
 import org.jabref.logic.util.BackgroundTask;
 import org.jabref.logic.util.TaskExecutor;
-
-import kong.unirest.core.UnirestException;
 
 public class WebSearchTabViewModel implements PreferenceTabViewModel {
     private final BooleanProperty enableWebSearchProperty = new SimpleBooleanProperty();
@@ -153,12 +148,12 @@ public class WebSearchTabViewModel implements PreferenceTabViewModel {
         warnAboutDuplicatesOnImportProperty.setValue(importerPreferences.shouldWarnAboutDuplicatesOnImport());
         shouldDownloadLinkedOnlineFiles.setValue(filePreferences.shouldDownloadLinkedFiles());
         shouldKeepDownloadUrl.setValue(filePreferences.shouldKeepDownloadUrl());
-        addImportedEntries.setValue(libraryPreferences.isAddImportedEntriesEnabled());
+        addImportedEntries.setValue(libraryPreferences.shouldAddImportedEntries());
         addImportedEntriesGroupName.setValue(libraryPreferences.getAddImportedEntriesGroupName());
         defaultPlainCitationParser.setValue(importerPreferences.getDefaultPlainCitationParser());
         citationsRelationStoreTTL.setValue(importerPreferences.getCitationsRelationsStoreTTL());
 
-        useCustomDOIProperty.setValue(doiPreferences.isUseCustom());
+        useCustomDOIProperty.setValue(doiPreferences.shouldUseCustom());
         useCustomDOINameProperty.setValue(doiPreferences.getDefaultBaseURI());
 
         grobidEnabledProperty.setValue(grobidPreferences.isGrobidEnabled());
@@ -176,6 +171,7 @@ public class WebSearchTabViewModel implements PreferenceTabViewModel {
         Set<String> customizableKeyFetcherNames = WebFetchers.getCustomizableKeyFetchers(importFormatPreferences, importerPreferences).stream().map(WebFetcher::getName).collect(Collectors.toSet());
 
         fetchers.clear();
+        Set<String> addedFetcherNames = new HashSet<>();
         for (SearchBasedFetcher fetcher : allFetchers) {
             if (CompositeSearchBasedFetcher.FETCHER_NAME.equals(fetcher.getName())) {
                 continue;
@@ -192,6 +188,24 @@ public class WebSearchTabViewModel implements PreferenceTabViewModel {
                                 fetcherViewModel.useCustomApiKeyProperty().set(apiKey.shouldUse());
                             });
             }
+            fetchers.add(fetcherViewModel);
+            addedFetcherNames.add(fetcher.getName());
+        }
+
+        // TODO: Refactor this loop and the above into one common logic / Use WebFetcher common interface
+        // Add customizable key fetchers that are not search-based (for ex: fulltext-only fetchers like WileyFetcher are CustomizableKeyFetchers)
+        for (CustomizableKeyFetcher fetcher : WebFetchers.getCustomizableKeyFetchers(importFormatPreferences, importerPreferences)) {
+            if (addedFetcherNames.contains(fetcher.getName())) {
+                continue;
+            }
+            FetcherViewModel fetcherViewModel = new FetcherViewModel(fetcher, false, true);
+            savedApiKeys.stream()
+                        .filter(apiKey -> apiKey.getName().equals(fetcher.getName()))
+                        .findFirst()
+                        .ifPresent(apiKey -> {
+                            fetcherViewModel.apiKeyProperty().set(apiKey.getKey());
+                            fetcherViewModel.useCustomApiKeyProperty().set(apiKey.shouldUse());
+                        });
             fetchers.add(fetcherViewModel);
         }
 
@@ -213,10 +227,10 @@ public class WebSearchTabViewModel implements PreferenceTabViewModel {
         filePreferences.setDownloadLinkedFiles(shouldDownloadLinkedOnlineFiles.getValue());
         filePreferences.setKeepDownloadUrl(shouldKeepDownloadUrl.getValue());
         libraryPreferences.setAddImportedEntries(addImportedEntries.getValue());
-        if (addImportedEntriesGroupName.getValue().isEmpty() || addImportedEntriesGroupName.getValue().startsWith(" ")) {
+        if (addImportedEntriesGroupName.getValue().trim().isEmpty()) {
             libraryPreferences.setAddImportedEntriesGroupName(Localization.lang("Imported entries"));
         } else {
-            libraryPreferences.setAddImportedEntriesGroupName(addImportedEntriesGroupName.getValue());
+            libraryPreferences.setAddImportedEntriesGroupName(addImportedEntriesGroupName.getValue().trim());
         }
         importerPreferences.setDefaultPlainCitationParser(defaultPlainCitationParser.getValue());
         importerPreferences.setCitationsRelationsStoreTTL(citationsRelationStoreTTL.getValue());
@@ -328,24 +342,7 @@ public class WebSearchTabViewModel implements PreferenceTabViewModel {
             if (!(webFetcher instanceof CustomizableKeyFetcher fetcher)) {
                 return false;
             }
-
-            String testUrlWithoutApiKey = fetcher.getTestUrl();
-            if (testUrlWithoutApiKey == null) {
-                return false;
-            }
-
-            if (apiKey.isEmpty()) {
-                return false;
-            }
-
-            try {
-                URLDownload urlDownload = new URLDownload(testUrlWithoutApiKey + apiKey);
-                // The HEAD request cannot be used because its response is not 200 (maybe 404 or 596...).
-                int statusCode = ((HttpURLConnection) urlDownload.getSource().openConnection()).getResponseCode();
-                return (statusCode >= 200) && (statusCode < 300);
-            } catch (IOException | UnirestException e) {
-                return false;
-            }
+            return fetcher.isValidKey(apiKey);
         };
         BackgroundTask.wrap(tester)
                       .onSuccess(onFinished)

@@ -53,7 +53,6 @@
     <Label text="%( Note: Press return to commit changes in the table! )"/>
     <TableView
             fx:id="searchEngineTable"
-            VBox.vgrow="ALWAYS"
             editable="true">
         <columns>
             <TableColumn minWidth="120"
@@ -71,6 +70,6 @@
         </columnResizePolicy>
     </TableView>
 
-    <Label styleClass="sectionHeader" text="%Web search fetchers"/>
+    <Label styleClass="sectionHeader" text="%Pre-selected fetchers"/>
     <VBox fx:id="fetchersContainer"/>
 </fx:root>

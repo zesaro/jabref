@@ -9,6 +9,9 @@ import javax.swing.undo.UndoManager;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.collections.ListChangeListener;
+import javafx.concurrent.Task;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyEvent;
@@ -58,14 +61,15 @@ import org.jabref.model.entry.BibEntryTypesManager;
 import org.jabref.model.util.FileUpdateMonitor;
 
 import com.airhacks.afterburner.injection.Injector;
+import com.dlsc.gemsfx.PowerPane;
+import com.dlsc.gemsfx.infocenter.InfoCenterPane;
+import com.dlsc.gemsfx.infocenter.InfoCenterViewPos;
 import com.tobiasdiez.easybind.EasyBind;
 import kong.unirest.core.Unirest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Represents the outer stage and the scene of the JabRef window.
- */
+/// Represents the outer stage and the scene of the JabRef window.
 public class JabRefGUI extends Application {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JabRefGUI.class);
@@ -87,6 +91,7 @@ public class JabRefGUI extends Application {
     private static DialogService dialogService;
     private static JabRefFrame mainFrame;
     private static GitHandlerRegistry gitHandlerRegistry;
+    private static JournalAbbreviationRepository journalAbbreviationRepository;
 
     private static RemoteListenerServerManager remoteListenerServerManager;
     private static HttpServerManager httpServerManager;
@@ -119,11 +124,13 @@ public class JabRefGUI extends Application {
                     Injector.instantiateModelOrService(BibEntryTypesManager.class),
                     clipBoardManager,
                     taskExecutor,
-                    gitHandlerRegistry);
+                    gitHandlerRegistry,
+                    journalAbbreviationRepository);
 
             openWindow();
 
             startBackgroundTasks();
+            setupHttpServerEnabledListener();
 
             if (!fileUpdateMonitor.isActive()) {
                 dialogService.showErrorDialogAndWait(
@@ -166,11 +173,11 @@ public class JabRefGUI extends Application {
         DirectoryMonitor directoryMonitor = new DirectoryMonitor();
         Injector.setModelOrService(DirectoryMonitor.class, directoryMonitor);
 
-        gitHandlerRegistry = new GitHandlerRegistry();
+        gitHandlerRegistry = new GitHandlerRegistry(preferences.getGitPreferences());
         Injector.setModelOrService(GitHandlerRegistry.class, gitHandlerRegistry);
 
         BibEntryTypesManager entryTypesManager = preferences.getCustomEntryTypesRepository();
-        JournalAbbreviationRepository journalAbbreviationRepository = JournalAbbreviationLoader.loadRepository(preferences.getJournalAbbreviationPreferences());
+        journalAbbreviationRepository = JournalAbbreviationLoader.loadRepository(preferences.getJournalAbbreviationPreferences());
         Injector.setModelOrService(BibEntryTypesManager.class, entryTypesManager);
         Injector.setModelOrService(JournalAbbreviationRepository.class, journalAbbreviationRepository);
         Injector.setModelOrService(ProtectedTermsLoader.class, new ProtectedTermsLoader(preferences.getProtectedTermsPreferences()));
@@ -183,7 +190,7 @@ public class JabRefGUI extends Application {
         JabRefGUI.httpServerManager = new HttpServerManager();
         Injector.setModelOrService(HttpServerManager.class, JabRefGUI.httpServerManager);
 
-        JabRefGUI.languageServerController = new LanguageServerController(preferences, journalAbbreviationRepository);
+        JabRefGUI.languageServerController = new LanguageServerController(preferences, journalAbbreviationRepository, entryTypesManager);
         Injector.setModelOrService(LanguageServerController.class, JabRefGUI.languageServerController);
 
         JabRefGUI.stateManager = new JabRefGuiStateManager();
@@ -208,6 +215,16 @@ public class JabRefGUI extends Application {
         JabRefGUI.dialogService = new JabRefDialogService(mainStage);
         Injector.setModelOrService(DialogService.class, dialogService);
 
+        stateManager.getRunningBackgroundTasks().addListener((ListChangeListener<? super Task<?>>) change -> {
+            while (change.next()) {
+                if (change.wasAdded()) {
+                    for (Task<?> task : change.getAddedSubList()) {
+                        dialogService.notify(new Notifications.TaskNotification(task));
+                    }
+                }
+            }
+        });
+
         JabRefGUI.clipBoardManager = new ClipBoardManager(stateManager);
         Injector.setModelOrService(ClipBoardManager.class, clipBoardManager);
 
@@ -223,7 +240,13 @@ public class JabRefGUI extends Application {
                 preferences.getImporterPreferences(),
                 preferences.getImportFormatPreferences(),
                 preferences.getFieldPreferences(),
-                entryTypesManager
+                preferences.getEntryEditorPreferences().citationFetcherTypeProperty(),
+                preferences.getEntryEditorPreferences().citationCountFetcherTypeProperty(),
+                preferences.getCitationKeyPatternPreferences(),
+                preferences.getGrobidPreferences(),
+                JabRefGUI.aiService,
+                entryTypesManager,
+                dialogService
         );
         Injector.setModelOrService(SearchCitationsRelationsService.class, citationsAndRelationsSearchService);
     }
@@ -295,7 +318,14 @@ public class JabRefGUI extends Application {
         mainStage.setMaximized(windowMaximised);
         debugLogWindowState(mainStage);
 
-        Scene scene = new Scene(JabRefGUI.mainFrame);
+        PowerPane powerpane = new PowerPane();
+        powerpane.getInfoCenterPane().getInfoCenterView().getGroups().addAll(dialogService.getNotificationGroups());
+        Injector.setModelOrService(InfoCenterPane.class, powerpane.getInfoCenterPane());
+        powerpane.setContent(JabRefGUI.mainFrame);
+        powerpane.getInfoCenterPane().setInfoCenterViewPos(InfoCenterViewPos.BOTTOM_RIGHT);
+        powerpane.getInfoCenterPane().autoHideProperty().bind(Bindings.isEmpty(dialogService.getPersistentNotifications()));
+
+        Scene scene = new Scene(powerpane);
 
         LOGGER.debug("installing CSS");
         themeManager.installCssImmediately(scene);
@@ -374,11 +404,9 @@ public class JabRefGUI extends Application {
         debugLogWindowState(mainStage);
     }
 
-    /**
-     * prints the data from the screen (only in debug mode)
-     *
-     * @param mainStage JabRef's stage
-     */
+    /// prints the data from the screen (only in debug mode)
+    ///
+    /// @param mainStage JabRef's stage
     private void debugLogWindowState(Stage mainStage) {
         LOGGER.debug("""
                         screen data:
@@ -391,9 +419,7 @@ public class JabRefGUI extends Application {
                 mainStage.isMaximized(), mainStage.getX(), mainStage.getY(), mainStage.getWidth(), mainStage.getHeight());
     }
 
-    /**
-     * Tests if the window coordinates are inside any screen
-     */
+    /// Tests if the window coordinates are inside any screen
     private boolean isWindowPositionInBounds() {
         CoreGuiPreferences coreGuiPreferences = preferences.getGuiPreferences();
 
@@ -431,18 +457,29 @@ public class JabRefGUI extends Application {
     public void startBackgroundTasks() {
         RemotePreferences remotePreferences = preferences.getRemotePreferences();
         CLIMessageHandler cliMessageHandler = new CLIMessageHandler(mainFrame, preferences);
-        if (remotePreferences.useRemoteServer()) {
+        if (remotePreferences.shouldEnableRemoteServer()) {
             remoteListenerServerManager.openAndStart(
                     cliMessageHandler,
-                    remotePreferences.getPort());
+                    remotePreferences.getRemoteServerPort());
         }
 
-        if (remotePreferences.enableHttpServer()) {
-            httpServerManager.start(stateManager, remotePreferences.getHttpServerUri());
+        if (remotePreferences.shouldEnableHttpServer()) {
+            httpServerManager.start(preferences, stateManager, mainFrame, remotePreferences.getHttpServerUri());
         }
-        if (remotePreferences.enableLanguageServer()) {
+        if (remotePreferences.shouldEnableLanguageServer()) {
             languageServerController.start(cliMessageHandler, remotePreferences.getLanguageServerPort());
         }
+    }
+
+    private void setupHttpServerEnabledListener() {
+        RemotePreferences remotePreferences = preferences.getRemotePreferences();
+        EasyBind.listen(remotePreferences.enableHttpServerProperty(), (_, _, newValue) -> {
+            // stop in all cases, because the port might have changed
+            httpServerManager.stop();
+            if (newValue) {
+                httpServerManager.start(preferences, stateManager, mainFrame, remotePreferences.getHttpServerUri());
+            }
+        });
     }
 
     @Override
@@ -452,6 +489,7 @@ public class JabRefGUI extends Application {
             LOGGER.trace("Stopping JabRef GUI using a virtual thread executor");
 
             // Shutdown everything in parallel to prevent causing non-shutdown of something in case of issues
+
             executor.submit(() -> {
                 LOGGER.trace("Closing citations and relations search service");
                 citationsAndRelationsSearchService.close();
@@ -487,7 +525,7 @@ public class JabRefGUI extends Application {
             });
 
             executor.submit(() -> {
-                LOGGER.trace("Shutting down language server controller");
+                LOGGER.trace("Shutting down LSP server controller");
                 languageServerController.stop();
                 LOGGER.trace("LanguageServerController shut down");
             });
@@ -523,7 +561,7 @@ public class JabRefGUI extends Application {
             executor.submit(() -> {
                 LOGGER.trace("Shutting down postgreServer");
                 PostgreServer postgreServer = Injector.instantiateModelOrService(PostgreServer.class);
-                postgreServer.shutdown();
+                postgreServer.close();
                 LOGGER.trace("PostgreServer shut down");
             });
 

@@ -24,7 +24,6 @@ import org.jabref.gui.DialogService;
 import org.jabref.gui.StateManager;
 import org.jabref.gui.WorkspacePreferences;
 import org.jabref.gui.desktop.os.NativeDesktop;
-import org.jabref.gui.frame.UiMessageHandler;
 import org.jabref.gui.preferences.GuiPreferences;
 import org.jabref.gui.preferences.PreferenceTabViewModel;
 import org.jabref.gui.remote.CLIMessageHandler;
@@ -36,6 +35,7 @@ import org.jabref.http.manager.HttpServerManager;
 import org.jabref.languageserver.controller.LanguageServerController;
 import org.jabref.logic.FilePreferences;
 import org.jabref.logic.LibraryPreferences;
+import org.jabref.logic.UiMessageHandler;
 import org.jabref.logic.l10n.Language;
 import org.jabref.logic.l10n.Localization;
 import org.jabref.logic.net.ssl.TrustStoreManager;
@@ -228,13 +228,13 @@ public class GeneralTabViewModel implements PreferenceTabViewModel {
         createBackupProperty.setValue(filePreferences.shouldCreateBackup());
         backupDirectoryProperty.setValue(filePreferences.getBackupDirectory().toString());
 
-        remoteServerProperty.setValue(remotePreferences.useRemoteServer());
-        remotePortProperty.setValue(String.valueOf(remotePreferences.getPort()));
+        remoteServerProperty.setValue(remotePreferences.shouldEnableRemoteServer());
+        remotePortProperty.setValue(String.valueOf(remotePreferences.getRemoteServerPort()));
 
-        enableHttpServerProperty.setValue(remotePreferences.enableHttpServer());
-        httpPortProperty.setValue(String.valueOf(remotePreferences.getHttpPort()));
+        enableHttpServerProperty.setValue(remotePreferences.shouldEnableHttpServer());
+        httpPortProperty.setValue(String.valueOf(remotePreferences.getHttpServerPort()));
 
-        enableLanguageServerProperty.setValue(remotePreferences.enableLanguageServer());
+        enableLanguageServerProperty.setValue(remotePreferences.shouldEnableLanguageServer());
         languageServerPortProperty.setValue(String.valueOf(remotePreferences.getLanguageServerPort()));
     }
 
@@ -277,14 +277,8 @@ public class GeneralTabViewModel implements PreferenceTabViewModel {
         filePreferences.backupDirectoryProperty().setValue(Path.of(backupDirectoryProperty.getValue()));
 
         getPortAsInt(remotePortProperty.getValue()).ifPresent(newPort -> {
-            if (remotePreferences.isDifferentPort(newPort)) {
-                remotePreferences.setPort(newPort);
-            }
-        });
-
-        getPortAsInt(remotePortProperty.getValue()).ifPresent(newPort -> {
-            if (remotePreferences.isDifferentPort(newPort)) {
-                remotePreferences.setPort(newPort);
+            if (remotePreferences.isDifferentRemoteServerPort(newPort)) {
+                remotePreferences.setRemoteServerPort(newPort);
             }
         });
 
@@ -292,16 +286,16 @@ public class GeneralTabViewModel implements PreferenceTabViewModel {
         // stop in all cases, because the port might have changed
         remoteListenerServerManager.stop();
         if (remoteServerProperty.getValue()) {
-            remotePreferences.setUseRemoteServer(true);
-            remoteListenerServerManager.openAndStart(messageHandler, remotePreferences.getPort());
+            remotePreferences.setEnableRemoteServer(true);
+            remoteListenerServerManager.openAndStart(messageHandler, remotePreferences.getRemoteServerPort());
         } else {
-            remotePreferences.setUseRemoteServer(false);
+            remotePreferences.setEnableRemoteServer(false);
             remoteListenerServerManager.stop();
         }
 
         getPortAsInt(httpPortProperty.getValue()).ifPresent(newPort -> {
-            if (remotePreferences.isDifferentHttpPort(newPort)) {
-                remotePreferences.setHttpPort(newPort);
+            if (remotePreferences.isDifferentHttpServerPort(newPort)) {
+                remotePreferences.setHttpServerPort(newPort);
             }
         });
 
@@ -316,7 +310,7 @@ public class GeneralTabViewModel implements PreferenceTabViewModel {
         if (enableHttpServerProperty.getValue()) {
             remotePreferences.setEnableHttpServer(true);
             URI uri = remotePreferences.getHttpServerUri();
-            httpServerManager.start(stateManager, uri);
+            httpServerManager.start(preferences, stateManager, uiMessageHandler, uri);
         } else {
             remotePreferences.setEnableHttpServer(false);
             httpServerManager.stop();
@@ -495,6 +489,10 @@ public class GeneralTabViewModel implements PreferenceTabViewModel {
 
     public StringProperty httpPortProperty() {
         return httpPortProperty;
+    }
+
+    public BooleanProperty directHttpImportProperty() {
+        return remotePreferences.directHttpImportProperty();
     }
 
     public BooleanProperty enableLanguageServerProperty() {
