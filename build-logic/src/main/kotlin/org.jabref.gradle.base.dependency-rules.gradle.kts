@@ -143,6 +143,11 @@ extraJavaModuleInfo {
     }
     module("at.favre.lib:hkdf", "hkdf")
 
+    module("org.bibsonomy:bibsonomy-rest-client", "org.bibsonomy.restclient") {
+        exportAllPackages()
+        requireAllDefinedDependencies()
+    }
+
     module("cc.jilt:jilt", "jilt")         {
         exportAllPackages()
         requires("java.compiler") // Reason: javax.annotation.processor

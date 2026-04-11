@@ -73,6 +73,12 @@ open module org.jabref {
     requires jakarta.inject;
     // endregion
 
+    // BibSonomy
+    requires bibsonomy.common;
+    requires bibsonomy.model;
+    requires bibsonomy.rest.client;
+    requires bibsonomy.rest.common;
+
     // region: http server and client exchange
     // requires jakarta.ws.rs;
     // endregion
