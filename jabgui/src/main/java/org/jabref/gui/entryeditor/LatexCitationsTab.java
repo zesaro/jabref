@@ -28,8 +28,6 @@ import com.tobiasdiez.easybind.EasyBind;
 
 public class LatexCitationsTab extends EntryEditorTab {
 
-    public static final String NAME = "LaTeX citations";
-
     private final StateManager stateManager;
 
     private final LatexCitationsTabViewModel viewModel;
@@ -53,7 +51,7 @@ public class LatexCitationsTab extends EntryEditorTab {
         this.progressIndicator = new ProgressIndicator();
         this.citationsDisplay = new CitationsDisplay();
 
-        setText(Localization.lang("LaTeX citations"));
+        setText(EntryEditorTabModel.BuiltIn.LATEX_CITATIONS.displayName());
         setTooltip(new Tooltip(Localization.lang("Search citations for this entry in LaTeX files")));
         setGraphic(IconTheme.JabRefIcons.LATEX_CITATIONS.getGraphicNode());
         setSearchPane();
@@ -78,7 +76,9 @@ public class LatexCitationsTab extends EntryEditorTab {
 
         searchPane.getColumnConstraints().setAll(column);
         searchPane.getRowConstraints().setAll(mainRow, bottomRow);
-        searchPane.setId("citationsPane");
+        searchPane.setId("citations-pane");
+        searchPane.getStyleClass().add("citations-pane");
+        searchPane.getStyleClass().add("padding-0");
         setContent(searchPane);
 
         HBox latexDirectoryBox = getLatexDirectoryBox();
@@ -110,41 +110,41 @@ public class LatexCitationsTab extends EntryEditorTab {
         Text latexDirectoryText = new Text(Localization.lang("Current search directory:"));
         Text latexDirectoryPath = new Text();
         latexDirectoryPath.textProperty().bind(viewModel.directoryProperty().asString());
-        latexDirectoryPath.setStyle("-fx-font-family:monospace;-fx-font-weight: bold;");
+        latexDirectoryPath.getStyleClass().addAll("font-monospace", "bold");
         Button latexDirectoryButton = new Button(Localization.lang("Set LaTeX file directory"));
         latexDirectoryButton.setGraphic(IconTheme.JabRefIcons.LATEX_FILE_DIRECTORY.getGraphicNode());
-        latexDirectoryButton.setOnAction(event -> viewModel.setLatexDirectory());
+        latexDirectoryButton.setOnAction(_ -> viewModel.setLatexDirectory());
         HBox latexDirectoryBox = new HBox(10, latexDirectoryText, latexDirectoryPath, latexDirectoryButton);
         latexDirectoryBox.setAlignment(Pos.CENTER);
         return latexDirectoryBox;
     }
 
     private VBox getCitationsPane() {
-        VBox citationsBox = new VBox(30, citationsDisplay);
+        VBox citationsBox = new VBox(12, citationsDisplay);
         VBox.setVgrow(citationsDisplay, Priority.ALWAYS);
-        citationsBox.setStyle("-fx-padding: 0;");
+        citationsBox.getStyleClass().add("padding-0");
         return citationsBox;
     }
 
     private VBox getNotFoundPane() {
         Label titleLabel = new Label(Localization.lang("No citations found"));
-        titleLabel.getStyleClass().add("heading");
+        titleLabel.getStyleClass().addAll("h3", "bold");
 
         Text notFoundText = new Text(Localization.lang("No LaTeX files containing this entry were found."));
-        notFoundText.getStyleClass().add("description");
+        notFoundText.getStyleClass().add("italic");
 
-        VBox notFoundBox = new VBox(30, titleLabel, notFoundText);
-        notFoundBox.setStyle("-fx-padding: 30 0 0 30;");
+        VBox notFoundBox = new VBox(4, titleLabel, notFoundText);
+        notFoundBox.getStyleClass().add("padding-4");
         return notFoundBox;
     }
 
     private VBox getErrorPane() {
         Label titleLabel = new Label(Localization.lang("Error"));
-        titleLabel.setStyle("-fx-font-size: 1.5em;-fx-font-weight: bold;-fx-text-fill: -fx-accent;");
+        titleLabel.getStyleClass().addAll("text-danger", "h3", "bold");
         Text errorMessageText = new Text();
         errorMessageText.textProperty().bind(viewModel.searchErrorProperty());
-        VBox errorMessageBox = new VBox(30, titleLabel, errorMessageText);
-        errorMessageBox.setStyle("-fx-padding: 30 0 0 30;");
+        VBox errorMessageBox = new VBox(4, titleLabel, errorMessageText);
+        errorMessageBox.getStyleClass().add("padding-4");
         return errorMessageBox;
     }
 
@@ -154,10 +154,5 @@ public class LatexCitationsTab extends EntryEditorTab {
             LibraryTab libraryTab = stateManager.activeTabProperty().get().get();
             viewModel.bindToEntry(libraryTab, entry);
         }
-    }
-
-    @Override
-    public boolean shouldShow(BibEntry entry) {
-        return viewModel.shouldShow();
     }
 }

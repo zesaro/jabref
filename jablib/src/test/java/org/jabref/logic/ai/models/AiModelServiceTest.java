@@ -2,10 +2,8 @@ package org.jabref.logic.ai.models;
 
 import java.util.List;
 
-import org.jabref.logic.net.URLDownload;
-import org.jabref.model.ai.AiProvider;
+import org.jabref.model.ai.llm.AiProvider;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,45 +16,20 @@ class AiModelServiceTest {
 
     private AiModelService aiModelService;
 
-    @BeforeAll
-    static void ensureUnirestInitialized() {
-        // Ensure URLDownload's static initializer runs before any tests
-        // This configures Unirest and prevents UnirestConfigException
-        try {
-            Class.forName(URLDownload.class.getName());
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Failed to initialize URLDownload", e);
-        }
-    }
-
     @BeforeEach
     void setUp() {
         aiModelService = new AiModelService();
     }
 
     @Test
-    void getStaticModelsReturnsNonEmptyListForOpenAi() {
-        List<String> models = aiModelService.getStaticModels(AiProvider.OPEN_AI);
-        assertNotNull(models);
-        assertFalse(models.isEmpty());
-        assertTrue(models.contains("gpt-4o-mini"));
-        assertTrue(models.contains("gpt-4o"));
+    void isModelNotFoundDetectsOllamaMessage() {
+        assertTrue(AiModelService.isModelNotFound(new RuntimeException("404 - message: model 'gpt-oss20b' not found, type: not_found_error")));
     }
 
     @Test
-    void getStaticModelsReturnsNonEmptyListForMistralAi() {
-        List<String> models = aiModelService.getStaticModels(AiProvider.MISTRAL_AI);
-        assertNotNull(models);
-        assertFalse(models.isEmpty());
-        assertTrue(models.contains("open-mistral-nemo"));
-    }
-
-    @Test
-    void getStaticModelsReturnsNonEmptyListForGemini() {
-        List<String> models = aiModelService.getStaticModels(AiProvider.GEMINI);
-        assertNotNull(models);
-        assertFalse(models.isEmpty());
-        assertTrue(models.contains("gemini-3-flash-preview"));
+    void isModelNotFoundIgnoresOtherErrors() {
+        assertFalse(AiModelService.isModelNotFound(new RuntimeException("java.net.ConnectException")));
+        assertFalse(AiModelService.isModelNotFound(new RuntimeException()));
     }
 
     @Test

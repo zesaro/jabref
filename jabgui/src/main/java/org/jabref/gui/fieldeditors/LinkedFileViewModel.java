@@ -41,6 +41,7 @@ import org.jabref.gui.util.ControlHelper;
 import org.jabref.logic.FilePreferences;
 import org.jabref.logic.externalfiles.LinkedFileHandler;
 import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.undo.UndoManager;
 import org.jabref.logic.util.TaskExecutor;
 import org.jabref.logic.util.io.FileNameUniqueness;
 import org.jabref.logic.util.io.FileUtil;
@@ -246,9 +247,12 @@ public class LinkedFileViewModel extends AbstractViewModel {
     public void askForNameAndRename() {
         String oldFile = this.linkedFile.getLink();
         Path oldFilePath = Path.of(oldFile);
+        // The rename happens on disk; only the link is journalled. Undoing afterwards restores the
+        // old link, which then points at a name no file has any more.
         Optional<String> askedFileName = dialogService.showInputDialogWithDefaultAndWait(
                 Localization.lang("Rename file"),
-                Localization.lang("New Filename"),
+                Localization.lang("New Filename")
+                        + "\n" + Localization.lang("Undo restores the link, not the file name."),
                 oldFilePath.getFileName().toString());
         askedFileName.ifPresent(this::renameFileToName);
     }
@@ -315,42 +319,85 @@ public class LinkedFileViewModel extends AbstractViewModel {
         try {
             // Attempt the rename operation
             linkedFileHandler.renameToName(targetFileName, overwriteFile);
-        } catch (IOException e) {
+        } catch (IOException _) {
             // Display an error dialog if file is locked or inaccessible
             dialogService.showErrorDialogAndWait(
                     Localization.lang("Rename failed"),
-                    Localization.lang("JabRef cannot access the file because it is being used by another process."));
+                    Localization.lang("Could not rename the file. The filename may be too long for your operating system, or the file is in use by another process."));
         }
     }
 
-    public void moveToDefaultDirectory() {
+    public void moveToDirectory(Path destinationDirectory) {
         if (linkedFile.isOnlineLink()) {
-            // Cannot move remote links
             return;
         }
 
-        // Get target folder
-        Optional<Path> fileDir = databaseContext.getFirstExistingFileDir(preferences.getFilePreferences());
-        if (fileDir.isEmpty()) {
-            dialogService.showErrorDialogAndWait(Localization.lang("Move file"), Localization.lang("File directory is not set or does not exist."));
+        Optional<Path> currentFile = linkedFile.findIn(databaseContext, preferences.getFilePreferences());
+        if (currentFile.isEmpty()) {
+            dialogService.showErrorDialogAndWait(
+                    Localization.lang("File not found"),
+                    Localization.lang("Could not find file '%0'.", linkedFile.getLink())
+            );
             return;
         }
 
-        Optional<Path> file = linkedFile.findIn(databaseContext, preferences.getFilePreferences());
-        if (file.isPresent()) {
-            // Found the linked file, so move it
-            try {
-                linkedFileHandler.moveToDefaultDirectory();
-            } catch (IOException exception) {
-                dialogService.showErrorDialogAndWait(
-                        Localization.lang("Move file"),
-                        Localization.lang("Could not move file '%0'.", file.get().toString()),
-                        exception);
-            }
-        } else {
-            // File doesn't exist, so we can't move it.
-            dialogService.showErrorDialogAndWait(Localization.lang("File not found"), Localization.lang("Could not find file '%0'.", linkedFile.getLink()));
+        Path destDirectoryWithPattern = getFullDestinationDirectory(destinationDirectory);
+
+        try {
+            linkedFileHandler.moveToExactDirectory(destDirectoryWithPattern);
+        } catch (IOException exception) {
+            dialogService.showErrorDialogAndWait(
+                    Localization.lang("Move file"),
+                    Localization.lang("Could not move file '%0'.", currentFile.get().toString()),
+                    exception);
         }
+    }
+
+    public void moveToDirectoryAndRename(Path destinationDirectory) {
+        if (!isInCurrentDirectory(destinationDirectory)) {
+            moveToDirectory(destinationDirectory);
+        }
+        renameToSuggestion();
+    }
+
+    /// Checks if the current linked file is already located in the target directory (considering also the directory pattern if exists).
+    public boolean isInCurrentDirectory(Path destinationDirectory) {
+        Optional<Path> currentDirectory = getCurrentFileDirectory();
+        if (currentDirectory.isEmpty()) {
+            return false;
+        }
+
+        Path destDirectoryWithPattern = getFullDestinationDirectory(destinationDirectory);
+        try {
+            return Files.isSameFile(currentDirectory.get(), destDirectoryWithPattern);
+        } catch (IOException e) {
+            LOGGER.debug("Could not compare directories {} and {}.", currentDirectory.get(), destDirectoryWithPattern, e);
+            return false;
+        }
+    }
+
+    private Optional<Path> getCurrentFileDirectory() {
+        return linkedFile.findIn(databaseContext, preferences.getFilePreferences())
+                         .map(Path::getParent);
+    }
+
+    /// Constructs the target directory by appending the directory pattern (if exists) to the given base directory.
+    private Path getFullDestinationDirectory(Path targetBaseDirectory) {
+        return targetBaseDirectory.resolve(getFileDirectoryPattern()).normalize();
+    }
+
+    private Path getFileDirectoryPattern() {
+        String directoryPattern = preferences.getFilePreferences().getFileDirectoryPattern();
+        if (directoryPattern.isEmpty()) {
+            return Path.of("");
+        }
+
+        String targetDirectoryName = FileUtil.createDirNameFromPattern(
+                databaseContext.getDatabase(),
+                entry,
+                directoryPattern);
+
+        return Path.of(targetDirectoryName);
     }
 
     /// Gets the filename for the current linked file and compares it to the new suggested filename.
@@ -392,16 +439,11 @@ public class LinkedFileViewModel extends AbstractViewModel {
         BiPredicate<Path, Path> equality = (fileA, fileB) -> {
             try {
                 return Files.isSameFile(fileA, fileB);
-            } catch (IOException e) {
+            } catch (IOException _) {
                 return false;
             }
         };
         return OptionalUtil.equals(targetDir, currentDir, equality);
-    }
-
-    public void moveToDefaultDirectoryAndRename() {
-        moveToDefaultDirectory();
-        renameToSuggestion();
     }
 
     /// Asks the user for confirmation that he really wants to the delete the file from disk (or just remove the link)
@@ -425,19 +467,19 @@ public class LinkedFileViewModel extends AbstractViewModel {
         });
     }
 
-    /// @implNote Similar method {@link org.jabref.gui.linkedfile.RedownloadMissingFilesAction#redownloadMissing}
-    public void redownload() {
+    /// @implNote Similar method [org.jabref.gui.linkedfile.RedownloadMissingFilesAction#redownloadMissing]
+    public void redownload(UndoManager undoManager) {
         LOGGER.info("Redownloading file from {}", linkedFile.getSourceUrl());
         if (linkedFile.getSourceUrl().isEmpty() || !LinkedFile.isOnlineLink(linkedFile.getSourceUrl())) {
             throw new UnsupportedOperationException("In order to download the file, the source url has to be an online link");
         }
 
-        DownloadLinkedFileAction downloadLinkedFileAction = getDownloadLinkedFileAction();
+        DownloadLinkedFileAction downloadLinkedFileAction = getDownloadLinkedFileAction(undoManager);
         downloadProgress.bind(downloadLinkedFileAction.downloadProgress());
         downloadLinkedFileAction.execute();
     }
 
-    private DownloadLinkedFileAction getDownloadLinkedFileAction() {
+    private DownloadLinkedFileAction getDownloadLinkedFileAction(UndoManager undoManager) {
         String fileName = Path.of(linkedFile.getLink()).getFileName().toString();
 
         return new DownloadLinkedFileAction(
@@ -450,14 +492,15 @@ public class LinkedFileViewModel extends AbstractViewModel {
                 preferences.getFilePreferences(),
                 taskExecutor,
                 fileName,
-                true);
+                true,
+                undoManager);
     }
 
-    public void download(boolean keepHtmlLink) {
-        download(keepHtmlLink, Map.of());
+    public void download(boolean keepHtmlLink, UndoManager undoManager) {
+        download(keepHtmlLink, Map.of(), undoManager);
     }
 
-    public void download(boolean keepHtmlLink, Map<String, String> headers) {
+    public void download(boolean keepHtmlLink, Map<String, String> headers, UndoManager undoManager) {
         LOGGER.info("Downloading file from {}", linkedFile.getSourceUrl());
         if (!linkedFile.isOnlineLink()) {
             throw new UnsupportedOperationException("In order to download the file it has to be an online link");
@@ -473,7 +516,8 @@ public class LinkedFileViewModel extends AbstractViewModel {
                 preferences.getFilePreferences(),
                 taskExecutor,
                 "",
-                keepHtmlLink);
+                keepHtmlLink,
+                undoManager);
         downloadLinkedFileAction.setDownloadHeaders(headers);
         downloadProgress.bind(downloadLinkedFileAction.downloadProgress());
         downloadLinkedFileAction.execute();
@@ -481,6 +525,16 @@ public class LinkedFileViewModel extends AbstractViewModel {
 
     public LinkedFile getFile() {
         return linkedFile;
+    }
+
+    public List<BibEntry> getLinkedEntries() {
+        List<BibEntry> entries = new ArrayList<>();
+        for (BibEntry entry : databaseContext.getEntries()) {
+            if (entry.hasFile(linkedFile)) {
+                entries.add(entry);
+            }
+        }
+        return entries;
     }
 
     public ValidationStatus fileExistsValidationStatus() {

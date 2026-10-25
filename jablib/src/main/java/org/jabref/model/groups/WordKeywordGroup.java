@@ -48,22 +48,20 @@ public class WordKeywordGroup extends KeywordGroup implements GroupEntryChanger 
         }
     }
 
-    private static boolean containsCaseInsensitive(Set<String> searchIn, Collection<String> searchFor) {
-        for (String searchWord : searchFor) {
-            if (!containsCaseInsensitive(searchIn, searchWord)) {
+    private static boolean containsCaseInsensitive(Set<String> searchIn, String[] searchWords) {
+        for (String searchWord : searchWords) {
+            boolean found = false;
+            for (String word : searchIn) {
+                if (word.equalsIgnoreCase(searchWord)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
                 return false;
             }
         }
         return true;
-    }
-
-    private static boolean containsCaseInsensitive(Set<String> searchIn, String searchFor) {
-        for (String word : searchIn) {
-            if (word.equalsIgnoreCase(searchFor)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @Override
@@ -124,6 +122,11 @@ public class WordKeywordGroup extends KeywordGroup implements GroupEntryChanger 
                 caseSensitive, keywordSeparator, onlySplitWordsAtSeparator);
     }
 
+    public WordKeywordGroup withKeywordSeparator(Character newKeywordSeparator) {
+        return new WordKeywordGroup(getName(), getHierarchicalContext(), searchField, searchExpression,
+                caseSensitive, newKeywordSeparator, onlySplitWordsAtSeparator);
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(getName(),
@@ -141,10 +144,12 @@ public class WordKeywordGroup extends KeywordGroup implements GroupEntryChanger 
 
     @AllowedToUseLogic("Uses StringUtil temporarily")
     class StringSearchStrategy implements SearchStrategy {
-        Set<String> searchWords;
+        private final Set<String> searchWords;
+        private final String[] caseInsensitiveSearchWords;
 
         StringSearchStrategy() {
             searchWords = new HashSet<>(StringUtil.getStringAsWords(searchExpression));
+            caseInsensitiveSearchWords = searchWords.toArray(String[]::new);
         }
 
         @Override
@@ -153,7 +158,7 @@ public class WordKeywordGroup extends KeywordGroup implements GroupEntryChanger 
             if (caseSensitive) {
                 return content.containsAll(searchWords);
             } else {
-                return containsCaseInsensitive(content, searchWords);
+                return containsCaseInsensitive(content, caseInsensitiveSearchWords);
             }
         }
     }

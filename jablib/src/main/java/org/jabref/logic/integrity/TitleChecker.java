@@ -8,9 +8,11 @@ import org.jabref.logic.l10n.Localization;
 import org.jabref.logic.util.strings.StringUtil;
 import org.jabref.model.database.BibDatabaseContext;
 
+import org.jspecify.annotations.Nullable;
+
 public class TitleChecker implements ValueChecker {
 
-    private static final Pattern INSIDE_CURLY_BRAKETS = Pattern.compile("\\{[^}\\{]*\\}");
+    private static final Pattern INSIDE_CURLY_BRACKETS = Pattern.compile("\\{[^}\\{]*\\}");
     private static final Pattern DELIMITERS = Pattern.compile("\\.|\\!|\\?|\\;|\\:|\\[");
     private static final Predicate<String> HAS_CAPITAL_LETTERS = Pattern.compile("[\\p{Lu}\\p{Lt}]").asPredicate();
 
@@ -21,6 +23,7 @@ public class TitleChecker implements ValueChecker {
     }
 
     /// Algorithm:
+    ///
     /// - remove everything that is in curly brackets
     /// - split the title into subtitles based on the delimiters
     /// (defined in the local variable DELIMITERS, currently . ! ? ; : [)
@@ -29,7 +32,7 @@ public class TitleChecker implements ValueChecker {
     /// -    ignore first letter as this can always be written in caps
     /// -    check if at least one capital letter is in the subtitle
     @Override
-    public Optional<String> checkValue(String value) {
+    public Optional<String> checkValue(@Nullable String value) {
         if (StringUtil.isBlank(value)) {
             return Optional.empty();
         }
@@ -38,7 +41,7 @@ public class TitleChecker implements ValueChecker {
             return Optional.empty();
         }
 
-        String valueOnlySpacesWithinCurlyBraces = INSIDE_CURLY_BRAKETS.matcher(value).replaceAll("");
+        String valueOnlySpacesWithinCurlyBraces = INSIDE_CURLY_BRACKETS.matcher(value).replaceAll("");
 
         String[] splitTitle = DELIMITERS.split(valueOnlySpacesWithinCurlyBraces);
         for (String subTitle : splitTitle) {

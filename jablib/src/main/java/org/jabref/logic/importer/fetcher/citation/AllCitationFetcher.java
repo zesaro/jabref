@@ -4,13 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.jabref.logic.ai.AiService;
+import org.jabref.logic.ai.chatting.ChatModel;
+import org.jabref.logic.ai.preferences.AiPreferences;
 import org.jabref.logic.citationkeypattern.CitationKeyPatternPreferences;
 import org.jabref.logic.database.DatabaseMerger;
 import org.jabref.logic.importer.FetcherException;
 import org.jabref.logic.importer.ImportFormatPreferences;
 import org.jabref.logic.importer.ImporterPreferences;
 import org.jabref.logic.importer.util.GrobidPreferences;
+import org.jabref.logic.l10n.Localization;
 import org.jabref.model.database.BibDatabase;
 import org.jabref.model.entry.BibEntry;
 
@@ -28,13 +30,13 @@ public class AllCitationFetcher implements CitationFetcher {
     private final List<CitationFetcher> fetchers;
     private final char keywordSeparator;
 
-    public AllCitationFetcher(ImporterPreferences importerPreferences, ImportFormatPreferences importFormatPreferences, CitationKeyPatternPreferences citationKeyPatternPreferences, GrobidPreferences grobidPreferences, AiService aiService) {
+    public AllCitationFetcher(ImporterPreferences importerPreferences, ImportFormatPreferences importFormatPreferences, CitationKeyPatternPreferences citationKeyPatternPreferences, GrobidPreferences grobidPreferences, AiPreferences aiPreferences, ChatModel chatModel) {
         List<CitationFetcher> providers = new ArrayList<>();
         for (CitationFetcherType type : CitationFetcherType.values()) {
             if (type == CitationFetcherType.ALL) {
                 continue;
             }
-            providers.add(CitationFetcherType.getCitationFetcher(type, importerPreferences, importFormatPreferences, citationKeyPatternPreferences, grobidPreferences, aiService));
+            providers.add(CitationFetcherType.getCitationFetcher(type, importerPreferences, importFormatPreferences, citationKeyPatternPreferences, grobidPreferences, aiPreferences, chatModel));
         }
         this.fetchers = List.copyOf(providers);
         this.keywordSeparator = importFormatPreferences.bibEntryPreferences().getKeywordSeparator();
@@ -101,7 +103,10 @@ public class AllCitationFetcher implements CitationFetcher {
         }
 
         if (!anySuccess && lastException != null) {
-            throw new FetcherException("All citation providers failed", lastException);
+            throw new FetcherException(
+                    "All citation providers failed",
+                    Localization.lang("No citation providers could return results for this request."),
+                    lastException);
         }
 
         if (lastException != null) {

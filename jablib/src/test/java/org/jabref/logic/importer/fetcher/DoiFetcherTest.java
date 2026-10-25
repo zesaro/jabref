@@ -7,7 +7,7 @@ import org.jabref.logic.importer.ImportFormatPreferences;
 import org.jabref.model.entry.BibEntry;
 import org.jabref.model.entry.field.StandardField;
 import org.jabref.model.entry.types.StandardEntryType;
-import org.jabref.testutils.category.FetcherTest;
+import org.jabref.support.ExternalServicesTest;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
-@FetcherTest
+@ExternalServicesTest
 class DoiFetcherTest {
 
     private final DoiFetcher fetcher = new DoiFetcher(mock(ImportFormatPreferences.class, Answers.RETURNS_DEEP_STUBS));
@@ -41,15 +41,7 @@ class DoiFetcherTest {
             .withField(StandardField.PAGES, "296--303")
             .withField(StandardField.DOI, "10.1109/icws.2007.59");
     private final BibEntry bibEntryIannarelli2019 = new BibEntry(StandardEntryType.Article)
-            .withField(StandardField.AUTHOR,
-                    ""
-                            + "Iannarelli Riccardo  and "
-                            + "Novello Anna  and "
-                            + "Stricker Damien  and "
-                            + "Cisternino Marco  and "
-                            + "Gallizio Federico  and "
-                            + "Telib Haysam  and "
-                            + "Meyer Thierry ")
+            .withField(StandardField.AUTHOR, "Iannarelli Riccardo  and Novello Anna  and Stricker Damien  and Cisternino Marco  and Gallizio Federico  and Telib Haysam  and Meyer Thierry ")
             .withField(StandardField.PUBLISHER, "AIDIC: Italian Association of Chemical Engineering")
             .withField(StandardField.TITLE, "Safety in research institutions: how to better communicate the risks using numerical simulations")
             .withField(StandardField.YEAR, "2019")

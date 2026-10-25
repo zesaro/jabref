@@ -11,14 +11,16 @@ import org.tinylog.Logger;
 
 //DESCRIPTION Converts a DOI to BibTeX
 
-//JAVA 25+
+//JAVA 25
 //RUNTIME_OPTIONS --enable-native-access=ALL-UNNAMED
 //FILES tinylog.properties=tinylog.properties
 
 //REPOS mavencentral,mavencentralsnapshots=https://central.sonatype.com/repository/maven-snapshots/
-//DEPS org.jabref:jablib:6.0-SNAPSHOT
 // JabRef relies on PR https://github.com/unicode-org/icu/pull/2127; for experiments the release version is OK.
 //DEPS com.ibm.icu:icu4j:78.1
+//DEPS com.nimbusds:oauth2-oidc-sdk:11.30.1
+//DEPS net.minidev:json-smart:2.6.0
+//DEPS org.jabref:jablib:6.0-SNAPSHOT
 
 void main() throws Exception {
     var preferences = JabRefCliPreferences.getInstance();

@@ -37,10 +37,10 @@ import org.jabref.model.util.FileUpdateMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/// Converts string representation of groups to a parsed {@link GroupTreeNode}.
+/// Converts string representation of groups to a parsed [GroupTreeNode].
 public class GroupsParser {
 
-    /// Identifier for SmartGroup (deprecated, replaced by {@link ExplicitGroup}).
+    /// Identifier for SmartGroup (deprecated, replaced by [ExplicitGroup]).
     ///
     /// @deprecated Kept for backward compatibility during migration.
     @Deprecated
@@ -60,6 +60,7 @@ public class GroupsParser {
         try {
             GroupTreeNode cursor = null;
             GroupTreeNode root = null;
+            boolean containsSearchGroups = false;
             for (String string : orderedData) {
                 string = string.trim();
                 if (string.isEmpty()) {
@@ -75,6 +76,7 @@ public class GroupsParser {
                 if (group == null) {
                     continue;
                 }
+                containsSearchGroups |= group instanceof SearchGroup;
                 GroupTreeNode newNode = GroupTreeNode.fromGroup(group);
                 if (cursor == null) {
                     cursor = newNode;
@@ -87,6 +89,7 @@ public class GroupsParser {
                     cursor = newNode;
                 }
             }
+            metaData.setContainsSearchGroups(containsSearchGroups);
             return root;
         } catch (ParseException e) {
             throw new ParseException(Localization
@@ -272,7 +275,7 @@ public class GroupsParser {
             ExplicitGroup newGroup = new ExplicitGroup(name, GroupHierarchyType.getByNumberOrDefault(context), keywordSeparator);
             addGroupDetails(token, newGroup);
             return newGroup;
-        } catch (NumberFormatException exception) {
+        } catch (NumberFormatException _) {
             throw new ParseException("Could not parse context in " + input);
         }
     }
@@ -289,7 +292,7 @@ public class GroupsParser {
             ExplicitGroup newGroup = new ExplicitGroup(name, GroupHierarchyType.getByNumberOrDefault(context), keywordSeparator);
             GroupsParser.addLegacyEntryKeys(token, newGroup);
             return newGroup;
-        } catch (NumberFormatException exception) {
+        } catch (NumberFormatException _) {
             throw new ParseException("Could not parse context in " + input);
         }
     }

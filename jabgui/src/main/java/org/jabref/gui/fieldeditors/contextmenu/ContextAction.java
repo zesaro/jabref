@@ -42,23 +42,12 @@ public class ContextAction extends SimpleCommand {
 
         this.executable.bind(
                 switch (command) {
-                    case RENAME_FILE_TO_PATTERN ->
+                    case RENAME_FILE_TO_PATTERN,
+                         RENAME_FILE_TO_NAME ->
                             Bindings.createBooleanBinding(
                                     () -> !linkedFile.getFile().isOnlineLink()
                                             && linkedFile.getFile().findIn(databaseContext, preferences.getFilePreferences()).isPresent()
                                             && !linkedFile.isGeneratedNameSameAsOriginal(),
-                                    nonNullDependencies(
-                                            linkedFile.getFile().linkProperty(),
-                                            entryFieldsObservable
-                                    )
-                            );
-
-                    case MOVE_FILE_TO_FOLDER,
-                         MOVE_FILE_TO_FOLDER_AND_RENAME ->
-                            Bindings.createBooleanBinding(
-                                    () -> !linkedFile.getFile().isOnlineLink()
-                                            && linkedFile.getFile().findIn(databaseContext, preferences.getFilePreferences()).isPresent()
-                                            && !linkedFile.isGeneratedPathSameAsOriginal(),
                                     nonNullDependencies(
                                             linkedFile.getFile().linkProperty(),
                                             entryFieldsObservable
@@ -85,7 +74,6 @@ public class ContextAction extends SimpleCommand {
 
                     case OPEN_FILE,
                          OPEN_FOLDER,
-                         RENAME_FILE_TO_NAME,
                          DELETE_FILE ->
                             Bindings.createBooleanBinding(
                                     () -> !linkedFile.getFile().isOnlineLink()
@@ -113,24 +101,22 @@ public class ContextAction extends SimpleCommand {
                     linkedFile.openFolder();
             case DOWNLOAD_FILE -> {
                 if (linkedFile.getFile().isOnlineLink()) {
-                    linkedFile.download(true);
+                    linkedFile.download(true, viewModel.getUndoManager());
                 }
             }
             case REDOWNLOAD_FILE -> {
                 if (!linkedFile.getFile().getSourceUrl().isEmpty()) {
-                    linkedFile.redownload();
+                    linkedFile.redownload(viewModel.getUndoManager());
                 }
             }
             case RENAME_FILE_TO_PATTERN ->
                     linkedFile.renameToSuggestion();
             case RENAME_FILE_TO_NAME ->
                     linkedFile.askForNameAndRename();
-            case MOVE_FILE_TO_FOLDER ->
-                    linkedFile.moveToDefaultDirectory();
-            case MOVE_FILE_TO_FOLDER_AND_RENAME ->
-                    linkedFile.moveToDefaultDirectoryAndRename();
             case DELETE_FILE ->
                     viewModel.deleteFile(linkedFile);
+            case LINK_FILE ->
+                    linkedFile.acceptAsLinked();
             case REMOVE_LINK,
                  REMOVE_LINKS ->
                     viewModel.removeFileLink(linkedFile);

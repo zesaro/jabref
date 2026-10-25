@@ -3,8 +3,6 @@ package org.jabref.gui.sidepane;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.swing.undo.UndoManager;
-
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.collections.ListChangeListener;
@@ -15,9 +13,9 @@ import org.jabref.gui.LibraryTabContainer;
 import org.jabref.gui.StateManager;
 import org.jabref.gui.actions.SimpleCommand;
 import org.jabref.gui.clipboard.ClipBoardManager;
-import org.jabref.gui.entryeditor.AdaptVisibleTabs;
 import org.jabref.gui.preferences.GuiPreferences;
 import org.jabref.logic.ai.AiService;
+import org.jabref.logic.git.util.GitHandlerRegistry;
 import org.jabref.logic.journals.JournalAbbreviationRepository;
 import org.jabref.logic.util.TaskExecutor;
 import org.jabref.model.entry.BibEntryTypesManager;
@@ -39,11 +37,10 @@ public class SidePane extends VBox {
                     DialogService dialogService,
                     AiService aiService,
                     StateManager stateManager,
-                    AdaptVisibleTabs adaptVisibleTabs,
                     FileUpdateMonitor fileUpdateMonitor,
                     BibEntryTypesManager entryTypesManager,
                     ClipBoardManager clipBoardManager,
-                    UndoManager undoManager) {
+                    GitHandlerRegistry gitHandlerRegistry) {
         this.stateManager = stateManager;
         this.preferences = preferences;
         this.viewModel = new SidePaneViewModel(
@@ -52,15 +49,14 @@ public class SidePane extends VBox {
                 abbreviationRepository,
                 stateManager,
                 taskExecutor,
-                adaptVisibleTabs,
                 dialogService,
                 aiService,
                 fileUpdateMonitor,
                 entryTypesManager,
                 clipBoardManager,
-                undoManager);
+                gitHandlerRegistry);
 
-        stateManager.getVisibleSidePaneComponents().addListener((ListChangeListener<SidePaneType>) c -> updateView());
+        stateManager.getVisibleSidePaneComponents().addListener((ListChangeListener<SidePaneType>) _ -> updateView());
         updateView();
     }
 

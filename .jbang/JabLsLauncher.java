@@ -2,11 +2,13 @@
 
 //DESCRIPTION jabls - start a bibtex languageserver
 
-//JAVA 25+
+//JAVA 25
 //RUNTIME_OPTIONS --enable-native-access=ALL-UNNAMED
 
+// mavenlocal is listed first so a locally built jablib (./gradlew :jablib:publishToMavenLocal)
+// takes precedence over the published 6.0-SNAPSHOT - needed when testing unreleased jablib changes.
 // raw is for https://github.com/unicode-org/icu/pull/2127
-//REPOS mavencentral,mavencentralsnapshots=https://central.sonatype.com/repository/maven-snapshots/,raw=https://raw.githubusercontent.com/JabRef/jabref/refs/heads/main/jablib/lib/
+//REPOS mavenlocal,mavencentral,mavencentralsnapshots=https://central.sonatype.com/repository/maven-snapshots/,raw=https://raw.githubusercontent.com/JabRef/jabref/refs/heads/main/jablib/lib/
 
 //DEPS org.jabref:jablib:6.0-SNAPSHOT
 
@@ -14,15 +16,15 @@
 //DEPS info.picocli:picocli:4.7.7
 
 // from jabls
-//DEPS com.fasterxml.jackson.core:jackson-annotations:2.21
+//DEPS com.fasterxml.jackson.core:jackson-annotations:2.22
 //DEPS info.picocli:picocli:4.7.7
-//DEPS org.apache.commons:commons-lang3:3.20.0
-//DEPS org.apache.logging.log4j:log4j-to-slf4j:2.25.4
+//DEPS org.apache.commons:commons-lang3:3.21.0
+//DEPS org.apache.logging.log4j:log4j-to-slf4j:2.26.1
 //DEPS org.eclipse.lsp4j:org.eclipse.lsp4j:1.0.0
-//DEPS org.slf4j:jul-to-slf4j:2.0.17
-//DEPS org.slf4j:slf4j-api:2.0.17
-//DEPS org.tinylog:slf4j-tinylog:2.7.0
-//DEPS org.tinylog:tinylog-impl:2.7.0
+//DEPS org.slf4j:jul-to-slf4j:2.0.20
+//DEPS org.slf4j:slf4j-api:2.0.20
+//DEPS org.tinylog:slf4j-tinylog:2.8.1
+//DEPS org.tinylog:tinylog-impl:2.8.1
 
 //SOURCES ../jabls/src/main/java/org/jabref/languageserver/BibtexTextDocumentService.java
 //SOURCES ../jabls/src/main/java/org/jabref/languageserver/BibtexWorkspaceService.java

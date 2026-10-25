@@ -27,9 +27,10 @@ import org.jspecify.annotations.Nullable;
 public class ParserResult {
     private final Set<BibEntryType> entryTypes;
     private final Multimap<Range, String> warnings;
+
     @NonNull private BibDatabase database;
     private MetaData metaData;
-    private Path file;
+    @Nullable private Path file;
     private boolean invalid;
     private boolean changedOnMigration = false;
 
@@ -189,10 +190,6 @@ public class ParserResult {
     /// Returns a `Range` indicating that a complete entry is hit. We use the line of the key. No key is found, the complete entry range is used.
     public Range getFieldRange(BibEntry entry, Field field) {
         Map<Field, Range> rangeMap = fieldRanges.getOrDefault(entry, Map.of());
-
-        if (rangeMap.isEmpty()) {
-            return Range.NULL_RANGE;
-        }
 
         Range range = rangeMap.get(field);
         if (range != null) {

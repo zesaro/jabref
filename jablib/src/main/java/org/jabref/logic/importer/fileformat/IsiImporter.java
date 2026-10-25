@@ -76,7 +76,7 @@ public class IsiImporter extends Importer {
         while (((str = bufferedReader.readLine()) != null) && (i < 50)) {
             /*
              * The following line gives false positives for RIS files, so it
-             * should not be uncommented. The hypen is a characteristic of the
+             * should not be uncommented. The hyphen is a characteristic of the
              * RIS format.
              *
              * str = str.replace(" - ", "")
@@ -249,7 +249,7 @@ public class IsiImporter extends Importer {
                         int detpos = value.indexOf(' ');
 
                         // tweak for IEEE Explore
-                        if ((detpos != -1) && !value.substring(0, detpos).trim().isEmpty()) {
+                        if ((detpos != -1) && !value.substring(0, detpos).isBlank()) {
                             value = value.substring(0, detpos);
                         }
                         pages.append("--").append(value);
@@ -309,7 +309,7 @@ public class IsiImporter extends Importer {
             List<Field> toRemove = new ArrayList<>();
             for (Map.Entry<Field, String> field : hm.entrySet()) {
                 String content = field.getValue();
-                if ((content == null) || content.trim().isEmpty()) {
+                if ((content == null) || content.isBlank()) {
                     toRemove.add(field.getKey());
                 }
             }

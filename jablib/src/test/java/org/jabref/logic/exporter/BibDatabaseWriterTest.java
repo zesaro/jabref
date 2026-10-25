@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jabref.logic.bibtex.FieldPreferences;
 import org.jabref.logic.citationkeypattern.AbstractCitationKeyPatterns;
@@ -38,8 +39,10 @@ import org.jabref.model.entry.BibEntryTypesManager;
 import org.jabref.model.entry.BibtexString;
 import org.jabref.model.entry.field.BibField;
 import org.jabref.model.entry.field.FieldPriority;
+import org.jabref.model.entry.field.FieldProperty;
 import org.jabref.model.entry.field.OrFields;
 import org.jabref.model.entry.field.StandardField;
+import org.jabref.model.entry.field.UnknownField;
 import org.jabref.model.entry.types.EntryType;
 import org.jabref.model.entry.types.StandardEntryType;
 import org.jabref.model.entry.types.UnknownEntryType;
@@ -64,7 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/// Tests for reading can be found at {@link org.jabref.logic.importer.fileformat.BibtexImporterTest}
+/// Tests for reading can be found at [org.jabref.logic.importer.fileformat.BibtexImporterTest]
 @Execution(ExecutionMode.SAME_THREAD)
 @ResourceLock("exporter")
 class BibDatabaseWriterTest {
@@ -384,8 +387,41 @@ class BibDatabaseWriterTest {
         assertEquals("@Customizedtype{key," + OS.NEWLINE + "}" + OS.NEWLINE + OS.NEWLINE
                         + "@Comment{jabref-meta: databaseType:bibtex;}"
                         + OS.NEWLINE + OS.NEWLINE
+                        + "@Comment{jabref-entrytype-v2: customizedtype: req[title;author;date] opt[year;month;publisher]}" + OS.NEWLINE + OS.NEWLINE
                         + "@Comment{jabref-entrytype: customizedtype: req[title;author;date] opt[year;month;publisher]}" + OS.NEWLINE,
                 stringWriter.toString());
+    }
+
+    @Test
+    void writeEntryWithCustomizedTypeAndPropertiesAlsoWritesTypeDeclaration() throws IOException {
+        EntryType customizedType = new UnknownEntryType("person");
+        BibEntryType customizedBibType = new BibEntryType(
+                customizedType,
+                Arrays.asList(
+                        new BibField(new UnknownField("Name", FieldProperty.PERSON_NAMES), FieldPriority.IMPORTANT),
+                        new BibField(new UnknownField("Googlescholar", FieldProperty.EXTERNAL), FieldPriority.IMPORTANT),
+                        new BibField(new UnknownField("Orcid", FieldProperty.EXTERNAL), FieldPriority.IMPORTANT)),
+                Arrays.asList(
+                        new OrFields(new UnknownField("Name", FieldProperty.PERSON_NAMES))));
+        entryTypesManager.addCustomOrModifiedType(customizedBibType, BibDatabaseMode.BIBTEX);
+        BibEntry entry = new BibEntry(customizedType).withCitationKey("key");
+        // needed to get a proper serialization
+        entry.setChanged(true);
+        database.insertEntry(entry);
+        bibtexContext.setMode(BibDatabaseMode.BIBTEX);
+
+        databaseWriter.writeDatabase(bibtexContext);
+
+        assertEquals("""
+                @Person{key,
+                }
+
+                @Comment{jabref-meta: databaseType:bibtex;}
+
+                @Comment{jabref-entrytype-v2: person: req[Name|PERSON_NAMES] opt[Googlescholar|EXTERNAL;Orcid|EXTERNAL]}
+
+                @Comment{jabref-entrytype: person: req[Name] opt[Googlescholar;Orcid]}
+                """.replace("\n", OS.NEWLINE), stringWriter.toString());
     }
 
     @Test
@@ -415,7 +451,9 @@ class BibDatabaseWriterTest {
                         + "@Othercustomizedtype{," + OS.NEWLINE + "}" + OS.NEWLINE + OS.NEWLINE
                         + "@Comment{jabref-meta: databaseType:bibtex;}"
                         + OS.NEWLINE + OS.NEWLINE
+                        + "@Comment{jabref-entrytype-v2: customizedtype: req[title] opt[]}" + OS.NEWLINE + OS.NEWLINE
                         + "@Comment{jabref-entrytype: customizedtype: req[title] opt[]}" + OS.NEWLINE + OS.NEWLINE
+                        + "@Comment{jabref-entrytype-v2: othercustomizedtype: req[title] opt[]}" + OS.NEWLINE + OS.NEWLINE
                         + "@Comment{jabref-entrytype: othercustomizedtype: req[title] opt[]}" + OS.NEWLINE,
                 stringWriter.toString());
     }
@@ -810,6 +848,46 @@ class BibDatabaseWriterTest {
     }
 
     @Test
+    void writeGitAutoPull() throws IOException {
+        metaData.setGitAutoPull(true);
+
+        databaseWriter.writePartOfDatabase(bibtexContext, List.of());
+
+        assertEquals("@Comment{jabref-meta: gitAutoPull:true;}" + OS.NEWLINE,
+                stringWriter.toString());
+    }
+
+    @Test
+    void writeGitAutoCommit() throws IOException {
+        metaData.setGitAutoCommit(true);
+
+        databaseWriter.writePartOfDatabase(bibtexContext, List.of());
+
+        assertEquals("@Comment{jabref-meta: gitAutoCommit:true;}" + OS.NEWLINE,
+                stringWriter.toString());
+    }
+
+    @Test
+    void writeGitAutoPush() throws IOException {
+        metaData.setGitAutoPush(true);
+
+        databaseWriter.writePartOfDatabase(bibtexContext, List.of());
+
+        assertEquals("@Comment{jabref-meta: gitAutoPush:true;}" + OS.NEWLINE,
+                stringWriter.toString());
+    }
+
+    @Test
+    void writeAiLibraryId() throws IOException {
+        metaData.setAiLibraryId("test-ai-library-id");
+
+        databaseWriter.writePartOfDatabase(bibtexContext, List.of());
+
+        assertEquals("@Comment{jabref-meta: aiLibraryId:test-ai-library-id;}" + OS.NEWLINE,
+                stringWriter.toString());
+    }
+
+    @Test
     void writeFileDirectories() throws IOException {
         metaData.setLibrarySpecificFileDirectory("\\Literature\\");
         metaData.setUserFileDirectory("defaultOwner-user", "D:\\Documents");
@@ -937,6 +1015,25 @@ class BibDatabaseWriterTest {
                         "  note = {some note}," + OS.NEWLINE +
                         "}" + OS.NEWLINE,
                 stringWriter.toString());
+    }
+
+    @Test
+    void saveActionsUseConfiguredMutationScheduler() throws IOException {
+        AtomicInteger scheduledMutations = new AtomicInteger();
+        databaseWriter.withMutationScheduler(mutation -> {
+            scheduledMutations.incrementAndGet();
+            mutation.run();
+        });
+        metaData.setSaveActions(new FieldFormatterCleanupActions(true, List.of(
+                new FieldFormatterCleanup(StandardField.TITLE, new LowerCaseFormatter()))));
+        BibEntry entry = new BibEntry(StandardEntryType.Article)
+                .withField(StandardField.TITLE, "SOME TITLE");
+        database.insertEntry(entry);
+
+        databaseWriter.writeDatabase(bibtexContext);
+
+        assertEquals(1, scheduledMutations.get());
+        assertEquals("some title", entry.getField(StandardField.TITLE).orElseThrow());
     }
 
     @Test

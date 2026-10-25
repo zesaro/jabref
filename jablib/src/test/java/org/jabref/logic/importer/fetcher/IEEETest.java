@@ -16,7 +16,8 @@ import org.jabref.logic.util.URLUtil;
 import org.jabref.model.entry.BibEntry;
 import org.jabref.model.entry.field.StandardField;
 import org.jabref.model.entry.types.StandardEntryType;
-import org.jabref.testutils.category.FetcherTest;
+import org.jabref.model.paging.Page;
+import org.jabref.support.ExternalServicesTest;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +30,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@FetcherTest
+@ExternalServicesTest
 @Disabled("https://github.com/JabRef/jabref-issue-melting-pot/issues/846")
 class IEEETest implements SearchBasedFetcherCapabilityTest, PagedSearchFetcherTest {
 
@@ -168,6 +169,12 @@ class IEEETest implements SearchBasedFetcherCapabilityTest, PagedSearchFetcherTe
         // Abstract should not be included in JabRef tests
         fetchedEntries.forEach(entry -> entry.clearField(StandardField.ABSTRACT));
         assertEquals(List.of(IGOR_NEWCOMERS), fetchedEntries);
+    }
+
+    @Test
+    void performRawSearchQueryPagedWithBlankQueryReturnsEmptyPage() throws FetcherException {
+        Page<BibEntry> result = fetcher.performRawSearchQueryPaged("", 0);
+        assertEquals(List.of(), result.getContent());
     }
 
     @Override

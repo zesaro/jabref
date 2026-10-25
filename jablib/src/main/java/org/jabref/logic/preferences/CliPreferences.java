@@ -1,14 +1,16 @@
 package org.jabref.logic.preferences;
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.prefs.BackingStoreException;
 
 import org.jabref.logic.FilePreferences;
 import org.jabref.logic.InternalPreferences;
 import org.jabref.logic.JabRefException;
 import org.jabref.logic.LibraryPreferences;
-import org.jabref.logic.ai.AiPreferences;
+import org.jabref.logic.ai.preferences.AiPreferences;
 import org.jabref.logic.bibtex.FieldPreferences;
 import org.jabref.logic.citationkeypattern.CitationKeyPatternPreferences;
 import org.jabref.logic.cleanup.CleanupPreferences;
@@ -17,14 +19,15 @@ import org.jabref.logic.exporter.SelfContainedSaveConfiguration;
 import org.jabref.logic.git.preferences.GitPreferences;
 import org.jabref.logic.importer.ImportFormatPreferences;
 import org.jabref.logic.importer.ImporterPreferences;
-import org.jabref.logic.importer.fetcher.MrDlibPreferences;
 import org.jabref.logic.importer.util.GrobidPreferences;
-import org.jabref.logic.journals.JournalAbbreviationPreferences;
+import org.jabref.logic.journals.AbbreviationPreferences;
 import org.jabref.logic.journals.JournalAbbreviationRepository;
 import org.jabref.logic.layout.LayoutFormatterPreferences;
 import org.jabref.logic.layout.format.NameFormatterPreferences;
+import org.jabref.logic.net.CiteDrivePreferences;
 import org.jabref.logic.net.ProxyPreferences;
 import org.jabref.logic.net.ssl.SSLPreferences;
+import org.jabref.logic.ocr.OcrPreferences;
 import org.jabref.logic.openoffice.OpenOfficePreferences;
 import org.jabref.logic.protectedterms.ProtectedTermsPreferences;
 import org.jabref.logic.push.PushToApplicationPreferences;
@@ -50,7 +53,7 @@ public interface CliPreferences {
 
     BibEntryPreferences getBibEntryPreferences();
 
-    JournalAbbreviationPreferences getJournalAbbreviationPreferences();
+    AbbreviationPreferences getAbbreviationPreferences();
 
     FilePreferences getFilePreferences();
 
@@ -60,16 +63,19 @@ public interface CliPreferences {
 
     Map<String, Object> getDefaults();
 
-    /// Returns the export configuration. The contained SaveConfiguration is a {@link org.jabref.model.metadata.SelfContainedSaveOrder}
+    /// Returns the export configuration. The contained SaveConfiguration is a [org.jabref.model.metadata.SelfContainedSaveOrder]
     SelfContainedSaveConfiguration getSelfContainedExportConfiguration();
 
     BibEntryTypesManager getCustomEntryTypesRepository();
 
     void storeCustomEntryTypesRepository(BibEntryTypesManager entryTypesManager);
 
-    CleanupPreferences getCleanupPreferences();
+    /// Returns the custom entry type decisions the user declined to store, as created by the caller
+    Set<String> getDeclinedCustomEntryTypes();
 
-    CleanupPreferences getDefaultCleanupPreset();
+    void addDeclinedCustomEntryTypes(Collection<String> declinedEntryTypes);
+
+    CleanupPreferences getCleanupPreferences();
 
     LibraryPreferences getLibraryPreferences();
 
@@ -82,6 +88,8 @@ public interface CliPreferences {
     RemotePreferences getRemotePreferences();
 
     ProxyPreferences getProxyPreferences();
+
+    CiteDrivePreferences getCiteDrivePreferences();
 
     SSLPreferences getSSLPreferences();
 
@@ -100,8 +108,6 @@ public interface CliPreferences {
     NameFormatterPreferences getNameFormatterPreferences();
 
     SearchPreferences getSearchPreferences();
-
-    MrDlibPreferences getMrDlibPreferences();
 
     ProtectedTermsPreferences getProtectedTermsPreferences();
 
@@ -132,4 +138,6 @@ public interface CliPreferences {
                 getDOIPreferences(),
                 getFilePreferences().mainFileDirectoryProperty());
     }
+
+    OcrPreferences getOcrPreferences();
 }

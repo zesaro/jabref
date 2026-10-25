@@ -83,6 +83,15 @@ One can also add [callouts](https://just-the-docs.github.io/just-the-docs-tests/
 
 Comment on the issue you want to work at with `/assign-me`.
 GitHub will then automatically assign you.
+Issues labeled `status: needs-triage` cannot be self-assigned until a maintainer has triaged them.
+
+Before you do so, read the complete issue and its discussion.
+Some issues state a prerequisite - typically another pull request that has to be merged first.
+As long as that prerequisite is open, the issue cannot be worked on; it is updated as soon as it is ready to be picked up.
+
+Please do not ping maintainers for a status update shortly after a comment.
+JabRef is developed by volunteers in their free time, and GitHub notifies them about every comment.
+If a question is unanswered for more than a week, a friendly reminder is fine.
 
 <!-- markdownlint-disable-next-line MD026 -->
 ## Give JabRef a Star!
@@ -142,7 +151,7 @@ For UI changes, we know that test cases are hard to write.
 Therefore, you can omit them.
 However, please at least add a screenshot showing your changes to the request.
 
-<!-- In case you do not have time to add a test case, we nevertheless ask you to at least run `gradlew check` to ensure that your change does not break anything else. -->
+<!-- In case you do not have time to add a test case, we nevertheless ask you to at least run `./gradlew check` to ensure that your change does not break anything else. -->
 
 #### Write a good commit message
 
@@ -179,6 +188,8 @@ In short, please keep these two principles in mind when you contribute:
 
 More reading on that is available at <https://roe.dev/blog/using-ai-in-open-source>.
 
+The [Don't paste the AI, please.](https://dontpastetheai.com/) website offers a practical perspective on using AI as an assistant rather than copying its output.
+
 We reserve the right to reject pull requests that contain little or no genuine and original contribution from the contributor.
 
 ### After submission of a pull request
@@ -202,6 +213,11 @@ Since JabRef is driven by volunteers in their spare time, reviews may take more 
 The pull request may be approved immediately, or a reviewer may request changes and/or have discussions regarding your approach.
 In that case, you are expected to answer any questions and implement the requested changes.
 
+> [!IMPORTANT]
+> Do **not** resolve review discussions yourself after addressing the feedback.
+> Resolving a conversation is reserved for the maintainer who started it, so they can verify the fix.
+> As a contributor, reply to the comment to indicate it has been addressed, then leave the conversation open.
+
 Please – **never ever close a pull request and open a new one** -
 This causes unnecessary work on our side, and is not in the style of the GitHub Open Source community.
 You can push any changes you need to make to the branch your pull request is *from*.
@@ -223,7 +239,9 @@ We need that information for our package maintainers (e.g., those of the [debian
 In case you add a library or do major code rewrites, we ask you to document your decision. Recommended reading: [https://adr.github.io/](https://adr.github.io).
 
 We simply ask to create a new markdown file in `docs/adr` following the template presented at [https://adr.github.io/madr/](https://adr.github.io/madr/).
-You can link that ADR using `@ADR({num})` as annotation.
+You can link code to that ADR with OpenFastTrace: put the identifier `adr~{short-title}~1` directly below the ADR's title, add `Needs: impl`,
+and mark the implementation with `// [impl->adr~{short-title}~1]`.
+See [the requirements documentation](docs/requirements/index.md) for details.
 
 #### When adding a new `Localization.lang` entry
 
@@ -253,7 +271,8 @@ Find more information in the [JabRef developer docs](https://devdocs.jabref.org/
 In Markdown files (e.g., `CHANGELOG.md`), sometimes keyboard shortcuts need to be added.
 Example: `<kbd>Ctrl</kbd> + <kbd>Enter</kbd>`
 
-In case you add keys to the changelog, please follow these rules:
+This also applies to pull request descriptions as well as issue and review comments.
+In case you add keys, please follow these rules:
 
 * `<kbd>` tag for each key
 * First letter of key capitalized

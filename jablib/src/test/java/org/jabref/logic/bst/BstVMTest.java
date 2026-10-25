@@ -13,7 +13,9 @@ import org.jabref.model.entry.types.StandardEntryType;
 import org.antlr.v4.runtime.RecognitionException;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BstVMTest {
@@ -33,6 +35,7 @@ public class BstVMTest {
     @Test
     void abbrv() throws URISyntaxException, IOException {
         BstVM vm = new BstVM(Path.of(BstVMTest.class.getResource("abbrv.bst").toURI()));
+        assertTrue(vm.hasSortCommand());
         List<BibEntry> testEntries = List.of(defaultTestEntry());
 
         String expected = "\\begin{thebibliography}{1}\\bibitem{canh05}K.~Crowston, H.~Annabi, J.~Howison, and C.~Masango.\\newblock Effective work practices for floss development: A model and  propositions.\\newblock In {\\em Hawaii International Conference On System Sciences (HICSS)}, 2005.\\end{thebibliography}";
@@ -46,6 +49,7 @@ public class BstVMTest {
     @Test
     void ieeetran() throws URISyntaxException, IOException {
         BstVM vm = new BstVM(Path.of(BstVMTest.class.getResource("IEEEtran.bst").toURI()));
+        assertFalse(vm.hasSortCommand());
         List<BibEntry> testEntries = List.of(TestEntry.getTestEntry());
 
         String expected = """
@@ -76,11 +80,11 @@ public class BstVMTest {
 
         vm.render(testEntries);
 
-        assertEquals(2, vm.latestContext.strings().size());
-        assertEquals(7, vm.latestContext.integers().size());
-        assertEquals(1, vm.latestContext.entries().size());
-        assertEquals(5, vm.latestContext.entries().getFirst().fields.size());
-        assertEquals(38, vm.latestContext.functions().size());
+        assertEquals(2, vm.getContext().strings().size());
+        assertEquals(7, vm.getContext().integers().size());
+        assertEquals(1, vm.getContext().entries().size());
+        assertEquals(5, vm.getContext().entries().getFirst().fields.size());
+        assertEquals(38, vm.getContext().functions().size());
     }
 
     @Test
@@ -100,7 +104,7 @@ public class BstVMTest {
 
         assertEquals(
                 "Effective work practices for floss development: A model and propositions",
-                vm.latestContext.stack().pop());
+                vm.getContext().stack().pop());
     }
 
     @Test
@@ -108,7 +112,7 @@ public class BstVMTest {
         BstVM vm = new BstVM("FUNCTION { a }{ quote$ quote$ * } EXECUTE { a }");
 
         vm.render(List.of());
-        assertEquals("\"\"", vm.latestContext.stack().pop());
+        assertEquals("\"\"", vm.getContext().stack().pop());
     }
 
     @Test
@@ -117,8 +121,8 @@ public class BstVMTest {
 
         vm.render(List.of());
 
-        assertEquals(Integer.MAX_VALUE, vm.latestContext.stack().pop());
-        assertTrue(vm.latestContext.stack().isEmpty());
+        assertEquals(Integer.MAX_VALUE, vm.getContext().stack().pop());
+        assertTrue(vm.getContext().stack().isEmpty());
     }
 
     @Test
@@ -137,7 +141,7 @@ public class BstVMTest {
 
         vm.render(List.of());
 
-        assertEquals(BstVM.TRUE, vm.latestContext.stack().pop());
+        assertEquals(BstVM.TRUE, vm.getContext().stack().pop());
     }
 
     @Test
@@ -185,9 +189,9 @@ public class BstVMTest {
 
         vm.render(List.of());
 
-        assertEquals("A Colorful Morning", vm.latestContext.stack().pop());
-        assertEquals("Colorful Morning", vm.latestContext.stack().pop());
-        assertEquals(0, vm.latestContext.stack().size());
+        assertEquals("A Colorful Morning", vm.getContext().stack().pop());
+        assertEquals("Colorful Morning", vm.getContext().stack().pop());
+        assertEquals(0, vm.getContext().stack().size());
     }
 
     @Test
@@ -231,6 +235,17 @@ public class BstVMTest {
 
         vm.render(List.of());
 
-        assertEquals("colorful morning", vm.latestContext.stack().pop());
+        assertEquals("colorful morning", vm.getContext().stack().pop());
+    }
+
+    @Test
+    void emptyStacksCanBeParsed() {
+        assertDoesNotThrow(() -> new BstVM("""
+                FUNCTION {empty.block}
+                {
+                    {
+                    }
+                }
+                """));
     }
 }

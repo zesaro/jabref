@@ -75,19 +75,19 @@ public class DefaultLatexParser implements LatexParser {
              LineNumberReader lineNumberReader = new LineNumberReader(reader)) {
             for (String line = lineNumberReader.readLine(); line != null; line = lineNumberReader.readLine()) {
                 // Skip comments and blank lines.
-                if (line.trim().isEmpty() || line.trim().charAt(0) == '%') {
+                if (line.isBlank() || line.trim().charAt(0) == '%') {
                     continue;
                 }
                 matchCitation(latexFile, lineNumberReader.getLineNumber(), line, latexParserResult);
                 matchBibFile(latexFile, line, latexParserResult);
                 matchNestedFile(latexFile, line, latexParserResult);
             }
-        } catch (ClosedChannelException e) {
+        } catch (ClosedChannelException _) {
             // User changed the underlying LaTeX file
             // We ignore this error and just continue with parsing
             LOGGER.info("Parsing has been interrupted");
         } catch (IOException | UncheckedIOException e) {
-            // Some weired error during reading
+            // Some weird error during reading
             // We ignore this error and just continue with parsing
             LOGGER.info("Error while parsing file {}", latexFile, e);
         }

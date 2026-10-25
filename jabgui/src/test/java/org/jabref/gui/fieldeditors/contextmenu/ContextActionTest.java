@@ -9,6 +9,7 @@ import org.jabref.gui.actions.StandardActions;
 import org.jabref.gui.fieldeditors.LinkedFileViewModel;
 import org.jabref.gui.fieldeditors.LinkedFilesEditorViewModel;
 import org.jabref.gui.preferences.GuiPreferences;
+import org.jabref.gui.testutils.JavaFxExtension;
 import org.jabref.logic.FilePreferences;
 import org.jabref.model.database.BibDatabaseContext;
 import org.jabref.model.entry.BibEntry;
@@ -18,19 +19,19 @@ import com.tobiasdiez.easybind.optional.ObservableOptionalValue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Answers;
-import org.testfx.framework.junit5.ApplicationExtension;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(ApplicationExtension.class)
+@ExtendWith(JavaFxExtension.class)
 class ContextActionTest {
 
     @Test
@@ -53,22 +54,22 @@ class ContextActionTest {
     }
 
     @Test
+    void shouldBeExecutableForRenameToNameWhenOnlyFilenameDiffers() {
+        LinkedFileViewModel fileViewModel = mockOfflineExistingFileViewModel();
+        when(fileViewModel.isGeneratedPathSameAsOriginal()).thenReturn(true);
+        when(fileViewModel.isGeneratedNameSameAsOriginal()).thenReturn(false);
+
+        ContextAction action = newAction(StandardActions.RENAME_FILE_TO_NAME, fileViewModel);
+
+        assertTrue(action.isExecutable());
+    }
+
+    @Test
     void shouldBeExecutableForDownloadWhenFileIsOnlineLink() {
         LinkedFileViewModel fileViewModel = mockOnlineLinkViewModel("https://host/resource.pdf");
         ContextAction action = newAction(StandardActions.DOWNLOAD_FILE, fileViewModel);
 
         assertTrue(action.isExecutable(), "DOWNLOAD_FILE should be executable for online link");
-    }
-
-    @Test
-    void shouldNotBeExecutableForMoveToFolderWhenGeneratedPathMatchesOriginal() {
-        LinkedFileViewModel fileViewModel = mockOfflineExistingFileViewModel();
-        when(fileViewModel.isGeneratedPathSameAsOriginal()).thenReturn(true);
-
-        ContextAction action = newAction(StandardActions.MOVE_FILE_TO_FOLDER, fileViewModel);
-
-        assertFalse(action.isExecutable(),
-                "MOVE_FILE_TO_FOLDER should be disabled when generated path equals original");
     }
 
     @Test
@@ -106,12 +107,12 @@ class ContextActionTest {
         LinkedFileViewModel onlineViewModel = mockOnlineLinkViewModel("https://host/file.pdf");
         ContextAction onlineAction = newAction(StandardActions.DOWNLOAD_FILE, onlineViewModel);
         onlineAction.execute();
-        verify(onlineViewModel).download(true);
+        verify(onlineViewModel).download(eq(true), any());
 
         LinkedFileViewModel offlineViewModel = mockOfflineExistingFileViewModel();
         ContextAction offlineAction = newAction(StandardActions.DOWNLOAD_FILE, offlineViewModel);
         offlineAction.execute();
-        verify(offlineViewModel, never()).download(anyBoolean());
+        verify(offlineViewModel, never()).download(anyBoolean(), any());
     }
 
     @Test
@@ -120,13 +121,13 @@ class ContextActionTest {
         when(viewModelWithSource.getFile().getSourceUrl()).thenReturn("https://host/file.pdf");
         ContextAction actionWithSource = newAction(StandardActions.REDOWNLOAD_FILE, viewModelWithSource);
         actionWithSource.execute();
-        verify(viewModelWithSource).redownload();
+        verify(viewModelWithSource).redownload(any());
 
         LinkedFileViewModel viewModelWithoutSource = mockOnlineLinkViewModel("");
         when(viewModelWithoutSource.getFile().getSourceUrl()).thenReturn("");
         ContextAction actionWithoutSource = newAction(StandardActions.REDOWNLOAD_FILE, viewModelWithoutSource);
         actionWithoutSource.execute();
-        verify(viewModelWithoutSource, never()).redownload();
+        verify(viewModelWithoutSource, never()).redownload(any());
     }
 
     @Test
@@ -149,26 +150,6 @@ class ContextActionTest {
         action.execute();
 
         verify(fileViewModel).askForNameAndRename();
-    }
-
-    @Test
-    void shouldExecuteMoveToDefaultDirectory() {
-        LinkedFileViewModel fileViewModel = mockOfflineExistingFileViewModel();
-        ContextAction action = newAction(StandardActions.MOVE_FILE_TO_FOLDER, fileViewModel);
-
-        action.execute();
-
-        verify(fileViewModel).moveToDefaultDirectory();
-    }
-
-    @Test
-    void shouldExecuteMoveToDefaultDirectoryAndRename() {
-        LinkedFileViewModel fileViewModel = mockOfflineExistingFileViewModel();
-        ContextAction action = newAction(StandardActions.MOVE_FILE_TO_FOLDER_AND_RENAME, fileViewModel);
-
-        action.execute();
-
-        verify(fileViewModel).moveToDefaultDirectoryAndRename();
     }
 
     @Test

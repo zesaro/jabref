@@ -10,10 +10,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/// Similar tests are available in {@link org.jabref.model.entry.AuthorListTest}
+/// Similar tests are available in [org.jabref.model.entry.AuthorListTest]
 class AuthorListParserTest {
 
     AuthorListParser parser = new AuthorListParser();
@@ -21,6 +22,8 @@ class AuthorListParserTest {
     private static Stream<Arguments> parseSingleAuthorCorrectly() {
         return Stream.of(
                 Arguments.of("王, 军", new Author("军", "军.", null, "王", null)),
+                Arguments.of("हिंदी, परीक्षण", new Author("परीक्षण", "प.", null, "हिंदी", null)),
+                Arguments.of("العربية, اختبار", new Author("اختبار", "ا.", null, "العربية", null)),
                 Arguments.of("Doe, John", new Author("John", "J.", null, "Doe", null)),
                 Arguments.of("von Berlichingen zu Hornberg, Johann Gottfried", new Author("Johann Gottfried", "J. G.", "von", "Berlichingen zu Hornberg", null)),
                 Arguments.of("{Robert and Sons, Inc.}", new Author(null, null, null, "{Robert and Sons, Inc.}", null)),
@@ -51,6 +54,16 @@ class AuthorListParserTest {
         assertEquals(Optional.of("Z. Yao and D. S. Weld and W-P. Chen and H. Sun"), AuthorListParser.normalizeSimply("Z. Yao, D. S. Weld, W-P. Chen, and H. Sun"));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "Z. Yao, D. S. Weld, et al.",
+            "Z. Yao,D. S. Weld, et al.",
+            "Z. Yao,   D. S. Weld, et al."
+    })
+    void etAlNormalizedToAndOthers(String input) {
+        assertEquals(Optional.of("Z. Yao and D. S. Weld and others"), AuthorListParser.normalizeSimply(input));
+    }
+
     @Test
     void dashedNamesWithSpaceNormalized() {
         assertEquals(Optional.of("Z. Yao and D. S. Weld and W.-P. Chen and H. Sun"), AuthorListParser.normalizeSimply("Z. Yao, D. S. Weld, W.-P. Chen, and H. Sun"));
@@ -64,6 +77,26 @@ class AuthorListParserTest {
                                 Author.OTHERS
                         ),
                         "Alexander Artemenko and others"),
+                Arguments.of(
+                        AuthorList.of(
+                                new Author("Alexander", "A.", null, "Artemenko", null),
+                                Author.OTHERS
+                        ),
+                        "Alexander Artemenko et al."),
+                Arguments.of(
+                        AuthorList.of(
+                                new Author("John", "J.", null, "Smith", null),
+                                new Author("Jane", "J.", null, "Doe", null),
+                                Author.OTHERS
+                        ),
+                        "Smith, John and Doe, Jane, et al"),
+                Arguments.of(
+                        AuthorList.of(
+                                new Author("J.", "J.", null, "Smith", null),
+                                new Author("A.", "A.", null, "Doe", null),
+                                Author.OTHERS
+                        ),
+                        "J. Smith and A. Doe ET AL."),
                 Arguments.of(
                         AuthorList.of(
                                 new Author("I.", "I.", null, "Podadera", null),

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -56,24 +57,37 @@ public class FieldFormatterCleanup implements CleanupJob {
             return List.of();
         }
 
-        String oldValue = entry.getField(fieldKey).orElse(null);
-        // Computation runs on the calling (background) thread:
-        String newValue = formatter.format(oldValue);
+        Optional<String> oldValue = entry.getField(fieldKey);
+        if (oldValue.isEmpty()) {
+            return List.of();
+        }
 
-        if (newValue.equals(oldValue)) {
+        // Computation runs on the calling (background) thread:
+        String newValue = formatter.format(oldValue.get());
+
+        if (newValue.equals(oldValue.get())) {
             return List.of();
         }
 
         // Only the actual field mutation is dispatched via the scheduler:
         String appliedValue;
+        String expectedOldValue = oldValue.get();
         if (newValue.isEmpty()) {
-            mutationScheduler.accept(() -> entry.clearField(fieldKey));
+            mutationScheduler.accept(() -> {
+                if (entry.getField(fieldKey).filter(current -> current.equals(expectedOldValue)).isPresent()) {
+                    entry.clearField(fieldKey);
+                }
+            });
             appliedValue = null;
         } else {
-            mutationScheduler.accept(() -> entry.setField(fieldKey, newValue, EntriesEventSource.SAVE_ACTION));
+            mutationScheduler.accept(() -> {
+                if (entry.getField(fieldKey).filter(current -> current.equals(expectedOldValue)).isPresent()) {
+                    entry.setField(fieldKey, newValue, EntriesEventSource.SAVE_ACTION);
+                }
+            });
             appliedValue = newValue;
         }
-        return List.of(new FieldChange(entry, fieldKey, oldValue, appliedValue));
+        return List.of(new FieldChange(entry, fieldKey, expectedOldValue, appliedValue));
     }
 
     private List<FieldChange> cleanupAllFields(BibEntry entry, Consumer<Runnable> mutationScheduler) {

@@ -13,6 +13,7 @@ import org.jabref.model.search.SearchFlags;
 import org.jabref.model.search.query.BaseQueryNode;
 import org.jabref.model.search.query.NotNode;
 import org.jabref.model.search.query.OperatorNode;
+import org.jabref.model.search.query.SearchQuery;
 import org.jabref.model.search.query.SearchQueryNode;
 import org.jabref.search.SearchBaseVisitor;
 import org.jabref.search.SearchParser;
@@ -72,7 +73,7 @@ public class SearchQueryVisitor extends SearchBaseVisitor<BaseQueryNode> {
 
     @Override
     public BaseQueryNode visitComparison(SearchParser.ComparisonContext ctx) {
-        String term = SearchQueryConversion.unescapeSearchValue(ctx.searchValue());
+        String term = SearchQuery.unescapeSearchValue(ctx.searchValue());
 
         // unfielded terms, check the search bar flags
         if (ctx.FIELD() == null) {
@@ -87,12 +88,12 @@ public class SearchQueryVisitor extends SearchBaseVisitor<BaseQueryNode> {
 
         // Pseudo-fields
         field = switch (field) {
-            case "key" ->
+            case SearchFieldConstants.KEY ->
                     InternalField.KEY_FIELD.getName();
-            case "anykeyword" ->
+            case SearchFieldConstants.ANY_KEYWORD ->
                     StandardField.KEYWORDS.getName();
-            case "anyfield" ->
-                    "any";
+            case SearchFieldConstants.ANY_FIELD_ALIAS ->
+                    SearchFieldConstants.ANY_FIELD;
             default ->
                     field;
         };
@@ -104,7 +105,7 @@ public class SearchQueryVisitor extends SearchBaseVisitor<BaseQueryNode> {
             }
         }
 
-        if ("any".equals(field)) {
+        if (SearchFieldConstants.ANY_FIELD.equals(field)) {
             return new SearchQueryNode(Optional.empty(), term);
         }
 
