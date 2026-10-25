@@ -59,17 +59,17 @@ public class GroupTreeNodeTest {
                 .addSubgroup(new ExplicitGroup("ExplicitGrandParent", GroupHierarchyType.INDEPENDENT, ','));
         root.addSubgroup(getKeywordGroup("KeywordA"));
 
-        grandParent.addSubgroup(getExplict("ExplicitB"));
+        grandParent.addSubgroup(getExplicit("ExplicitB"));
         GroupTreeNode parent = grandParent.addSubgroup(getKeywordGroup("KeywordParent"));
         grandParent.addSubgroup(getSearchGroup("SearchB"));
         grandParent.addSubgroup(getKeywordGroup("KeywordB"));
 
         GroupTreeNode node = parent.addSubgroup(getKeywordGroup("KeywordNode"));
         parent.addSubgroup(getSearchGroup("SearchC"));
-        parent.addSubgroup(getExplict("ExplicitC"));
+        parent.addSubgroup(getExplicit("ExplicitC"));
         parent.addSubgroup(getKeywordGroup("KeywordC"));
 
-        node.addSubgroup(getExplict("ExplicitChild"));
+        node.addSubgroup(getExplicit("ExplicitChild"));
         return node;
     }
 
@@ -81,7 +81,7 @@ public class GroupTreeNodeTest {
         return new SearchGroup(name, GroupHierarchyType.INCLUDING, "searchExpression", EnumSet.of(SearchFlags.CASE_SENSITIVE));
     }
 
-    private static AbstractGroup getExplict(String name) {
+    private static AbstractGroup getExplicit(String name) {
         return new ExplicitGroup(name, GroupHierarchyType.REFINING, ',');
     }
 
@@ -338,5 +338,19 @@ public class GroupTreeNodeTest {
         List<FieldChange> fieldChanges = searchGroup.removeEntriesFromGroup(entries);
 
         assertEquals(List.of(), fieldChanges);
+    }
+
+    @Test
+    void getMatchingGroupsReevaluatesKeywordGroupsAfterEntryChange() {
+        GroupTreeNode root = getRoot();
+        GroupTreeNode parent = root.addSubgroup(new WordKeywordGroup("parent", GroupHierarchyType.INDEPENDENT, StandardField.KEYWORDS, "alpha", true, ',', false));
+        GroupTreeNode child = parent.addSubgroup(new WordKeywordGroup("child", GroupHierarchyType.REFINING, StandardField.KEYWORDS, "beta", true, ',', false));
+        BibEntry keywordEntry = new BibEntry().withField(StandardField.KEYWORDS, "alpha");
+
+        assertEquals(List.of(root, parent), root.getMatchingGroups(keywordEntry));
+
+        keywordEntry.setField(StandardField.KEYWORDS, "alpha, beta");
+
+        assertEquals(List.of(root, parent, child), root.getMatchingGroups(keywordEntry));
     }
 }

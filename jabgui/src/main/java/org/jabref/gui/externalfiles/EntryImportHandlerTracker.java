@@ -2,12 +2,12 @@ package org.jabref.gui.externalfiles;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jabref.gui.StateManager;
+import org.jabref.model.database.BibDatabaseContext;
 import org.jabref.model.entry.BibEntry;
 
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /// Tracks the import state
@@ -16,61 +16,87 @@ import org.jspecify.annotations.Nullable;
 ///
 /// 1. Calls `onFinish` in case all entries have been imported (based on the given totalEntries count)
 /// 2. Selects the imported entries after importing
+///
+/// Imports run concurrently: `ImportHandler` schedules one `BackgroundTask` chain per entry, so
+/// `markImported`/`markSkipped` are invoked from different threads. The mutating methods are therefore
+/// `synchronized` so that the counter update, list append, completion check, and `onFinish` execution
+/// happen atomically. This guarantees `onFinish` runs exactly once and only after every imported entry
+/// is visible in `importedEntries`.
+@NullMarked
 public class EntryImportHandlerTracker {
-    private final AtomicInteger imported = new AtomicInteger(0);
-    private final AtomicInteger skipped = new AtomicInteger(0);
     private final List<BibEntry> importedEntries;
 
-    private final @NonNull StateManager stateManager;
+    private final StateManager stateManager;
+    private final BibDatabaseContext targetDatabaseContext;
     private final int totalEntries;
+    private int imported = 0;
+    private int skipped = 0;
+    private boolean finished = false;
     private @Nullable Runnable onFinish;
 
-    public EntryImportHandlerTracker(StateManager stateManager) {
-        this(stateManager, 1);
+    public EntryImportHandlerTracker(StateManager stateManager, BibDatabaseContext targetDatabaseContext) {
+        this(stateManager, targetDatabaseContext, 1);
     }
 
-    public EntryImportHandlerTracker(StateManager stateManager, int totalEntries) {
+    public EntryImportHandlerTracker(StateManager stateManager, BibDatabaseContext targetDatabaseContext, int totalEntries) {
         this.stateManager = stateManager;
+        this.targetDatabaseContext = targetDatabaseContext;
         this.totalEntries = totalEntries;
-        if (totalEntries > 0) {
-            importedEntries = new ArrayList<>(totalEntries);
-        } else {
-            importedEntries = new ArrayList<>();
-        }
+        importedEntries = new ArrayList<>(Math.max(totalEntries, 4));
     }
 
-    public void setOnFinish(@Nullable Runnable onFinish) {
+    public synchronized void setOnFinish(@Nullable Runnable onFinish) {
         this.onFinish = onFinish;
     }
 
     /// Marks the given entry as imported
-    public void markImported(BibEntry entry) {
-        int totalProcessed = imported.incrementAndGet() + skipped.get();
+    public synchronized void markImported(BibEntry entry) {
+        imported++;
         importedEntries.add(entry);
-        checkDone(totalProcessed);
+        checkDone();
     }
 
-    public void markSkipped() {
-        int totalProcessed = imported.get() + skipped.incrementAndGet();
-        checkDone(totalProcessed);
+    public synchronized void markSkipped() {
+        skipped++;
+        checkDone();
     }
 
-    /// Checks if all entries have been imported; if yes, execute the onFinish action
-    private void checkDone(int totalProcessed) {
-        if (totalProcessed < totalEntries) {
+    /// Checks if all entries have been processed; if yes, execute the onFinish action exactly once.
+    /// Must be called while holding this object's monitor (i.e. from a `synchronized` method).
+    private void checkDone() {
+        if (finished || (imported + skipped) < totalEntries) {
             return;
         }
+        finished = true;
         if (onFinish != null) {
             onFinish.run();
         }
-        stateManager.setSelectedEntries(importedEntries);
+        List<BibEntry> importedEntriesSnapshot = List.copyOf(importedEntries);
+        stateManager.setSelectedEntries(importedEntriesSnapshot);
+        selectImportedEntriesInActiveTab(importedEntriesSnapshot);
     }
 
-    public int getImportedCount() {
-        return imported.get();
+    private void selectImportedEntriesInActiveTab(List<BibEntry> importedEntriesSnapshot) {
+        if (importedEntriesSnapshot.isEmpty()) {
+            return;
+        }
+
+        stateManager.activeTabProperty().get()
+                    .filter(tab -> targetDatabaseContext == tab.getBibDatabaseContext())
+                    .ifPresent(tab -> tab.clearAndSelect(importedEntriesSnapshot));
     }
 
-    public int getSkippedCount() {
-        return skipped.get();
+    /// Returns an immutable snapshot of the actually imported `BibEntry` instances (the copies inserted
+    /// into the database), not the originals passed to the import call.
+    public synchronized List<BibEntry> getImportedEntries() {
+        return List.copyOf(importedEntries);
+    }
+
+    public synchronized int getImportedCount() {
+        return imported;
+    }
+
+    public synchronized int getSkippedCount() {
+        return skipped;
     }
 }

@@ -8,6 +8,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.IntStream;
+
+import javafx.collections.ListChangeListener;
 
 import org.jabref.model.entry.BibEntry;
 import org.jabref.model.entry.BibtexString;
@@ -21,7 +24,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -88,6 +90,28 @@ class BibDatabaseTest {
     }
 
     @Test
+    void removeEntryNotifiesOnlyAboutTheRemovedEntry() {
+        BibEntry entry1 = new BibEntry();
+        BibEntry entry2 = new BibEntry();
+        BibEntry entry3 = new BibEntry();
+        database.insertEntries(entry1, entry2, entry3);
+
+        List<List<BibEntry>> addedEntries = new ArrayList<>();
+        List<List<BibEntry>> removedEntries = new ArrayList<>();
+        database.getEntries().addListener((ListChangeListener<BibEntry>) change -> {
+            while (change.next()) {
+                addedEntries.add(List.copyOf(change.getAddedSubList()));
+                removedEntries.add(List.copyOf(change.getRemoved()));
+            }
+        });
+
+        database.removeEntry(entry2);
+
+        assertEquals(List.of(List.of()), addedEntries);
+        assertEquals(List.of(List.of(entry2)), removedEntries);
+    }
+
+    @Test
     void removeAllEntriesRemovesAllEntriesFromEntriesList() {
         List<BibEntry> allEntries = new ArrayList<>();
         BibEntry entry1 = new BibEntry();
@@ -102,6 +126,41 @@ class BibDatabaseTest {
         assertFalse(database.containsEntryWithId(entry1.getId()));
         assertFalse(database.containsEntryWithId(entry2.getId()));
         assertFalse(database.containsEntryWithId(entry3.getId()));
+    }
+
+    @Test
+    void removeManyEntriesReplacesEntriesList() {
+        List<BibEntry> entriesToDelete = IntStream.range(0, 11)
+                                                  .mapToObj(_ -> new BibEntry())
+                                                  .toList();
+        BibEntry remainingEntry = new BibEntry();
+        database.insertEntries(entriesToDelete);
+        database.insertEntry(remainingEntry);
+
+        List<Boolean> replacementChanges = new ArrayList<>();
+        database.getEntries().addListener((ListChangeListener<BibEntry>) change -> {
+            while (change.next()) {
+                replacementChanges.add(change.wasReplaced());
+            }
+        });
+
+        database.removeEntries(entriesToDelete);
+
+        assertEquals(List.of(true), replacementChanges);
+        assertEquals(List.of(remainingEntry), database.getEntries());
+    }
+
+    @Test
+    void getEntriesSnapshotRemainsStableAfterEntriesAreRemoved() {
+        BibEntry entryToDelete = new BibEntry();
+        BibEntry remainingEntry = new BibEntry();
+        database.insertEntries(entryToDelete, remainingEntry);
+
+        List<BibEntry> entriesSnapshot = database.getEntriesSnapshot();
+        database.removeEntry(entryToDelete);
+
+        assertEquals(List.of(entryToDelete, remainingEntry), entriesSnapshot);
+        assertEquals(List.of(remainingEntry), database.getEntries());
     }
 
     @Test
@@ -162,7 +221,7 @@ class BibDatabaseTest {
     void stringIsNotModifiedAfterInsertion() {
         database.addString(bibtexString);
 
-        assertEquals(bibtexString, database.getString(bibtexString.getId()));
+        assertEquals(Optional.of(bibtexString), database.getString(bibtexString.getId()));
     }
 
     @Test
@@ -212,10 +271,10 @@ class BibDatabaseTest {
     @Test
     void databaseReturnsNullForRemovedString() {
         database.addString(bibtexString);
-        assertEquals(bibtexString, database.getString(bibtexString.getId()));
+        assertEquals(Optional.of(bibtexString), database.getString(bibtexString.getId()));
 
         database.removeString(bibtexString.getId());
-        assertNull(database.getString(bibtexString.getId()));
+        assertTrue(database.getString(bibtexString.getId()).isEmpty());
     }
 
     @Test
@@ -485,5 +544,133 @@ class BibDatabaseTest {
         assertEquals(0, database.indexOf(entryC));
         assertEquals(1, database.indexOf(entryD));
         assertEquals(-1, database.indexOf(entryA));
+    }
+
+    // [utest->req~import.entries.sorted-by-id~1]
+    @Test
+    void entriesInsertedOutOfCreationOrderAreFoundByIndexOf() {
+        BibEntry entryA = new BibEntry(StandardEntryType.Article);
+        BibEntry entryB = new BibEntry(StandardEntryType.Article);
+        BibEntry entryC = new BibEntry(StandardEntryType.Article);
+        BibEntry entryD = new BibEntry(StandardEntryType.Article);
+
+        database.insertEntries(entryB, entryD);
+        database.insertEntries(entryC, entryA);
+
+        assertEquals(List.of(entryA, entryB, entryC, entryD), database.getEntries());
+        assertEquals(0, database.indexOf(entryA));
+        assertEquals(1, database.indexOf(entryB));
+        assertEquals(2, database.indexOf(entryC));
+        assertEquals(3, database.indexOf(entryD));
+    }
+
+    // [utest->req~import.entries.sorted-by-id~1]
+    @Test
+    void smallOutOfOrderBatchDoesNotReplaceEntriesList() {
+        BibEntry firstEntry = new BibEntry(StandardEntryType.Article);
+        BibEntry secondEntry = new BibEntry(StandardEntryType.Article);
+        database.insertEntry(secondEntry);
+
+        List<Boolean> replacementChanges = new ArrayList<>();
+        database.getEntries().addListener((ListChangeListener<BibEntry>) change -> {
+            while (change.next()) {
+                replacementChanges.add(change.wasReplaced());
+            }
+        });
+
+        database.insertEntry(firstEntry);
+
+        assertEquals(List.of(false), replacementChanges);
+        assertEquals(List.of(firstEntry, secondEntry), database.getEntries());
+    }
+
+    // [utest->req~import.entries.sorted-by-id~1]
+    @Test
+    void largeBatchInsertedInReverseOrderIsSortedById() {
+        List<BibEntry> created = new ArrayList<>();
+        for (int i = 0; i < 2000; i++) {
+            created.add(new BibEntry(StandardEntryType.Article));
+        }
+        database.insertEntries(created.subList(1000, 2000));
+        database.insertEntries(created.subList(0, 1000).reversed());
+
+        assertEquals(created, database.getEntries());
+        assertEquals(1500, database.indexOf(created.get(1500)));
+        assertEquals(7, database.indexOf(created.get(7)));
+    }
+
+    @Test
+    void crossrefChangeUpdatesCitationIndex() {
+        BibDatabase database = new BibDatabase();
+        BibEntry parent = new BibEntry(StandardEntryType.Proceedings)
+                .withCitationKey("TestParent");
+        BibEntry child = new BibEntry(StandardEntryType.InProceedings);
+
+        database.insertEntry(parent);
+        database.insertEntry(child);
+
+        // setting the crossref field after insertion triggers the FieldChangedEvent
+        child.setField(StandardField.CROSSREF, "TestParent");
+
+        // verify the child was actually added to the citationIndex
+        Set<BibEntry> indexedChildren = database.getEntriesForCitationKey("TestParent");
+        assertTrue(indexedChildren.contains(child), "The citationIndex should contain the child entry under the parent's key");
+    }
+
+    @Test
+    void childCrossrefFollowsParentDoubleRename() {
+        BibDatabase database = new BibDatabase();
+        BibEntry parent = new BibEntry(StandardEntryType.Article).withCitationKey("ParentA");
+        BibEntry child = new BibEntry(StandardEntryType.Article);
+
+        // insert entry
+        database.insertEntry(parent);
+        database.insertEntry(child);
+
+        // setting crossref in child
+        child.setField(StandardField.CROSSREF, "ParentA");
+
+        // ensure it is in the first parent set
+        assertTrue(database.getEntriesForCitationKey("ParentA").contains(child), "Child should be indexed under ParentA");
+
+        // first rename of parent
+        parent.setCitationKey("ParentB");
+        assertTrue(database.getEntriesForCitationKey("ParentB").contains(child), "Child should have moved to the ParentB index set");
+
+        // second rename of parent
+        parent.setCitationKey("ParentC");
+        assertTrue(database.getEntriesForCitationKey("ParentC").contains(child), "Child should have moved to the ParentC index set");
+    }
+
+    @Test
+    void childIsIndexedUnderEachKeyInCommaSeparatedField() {
+        BibDatabase database = new BibDatabase();
+        BibEntry child = new BibEntry(StandardEntryType.Article);
+        database.insertEntry(child);
+
+        // set multiple links in related field
+        child.setField(StandardField.RELATED, " ParentA ,   ParentB ");
+
+        // verify all keys have child
+        assertTrue(database.getEntriesForCitationKey("ParentA").contains(child), "Child should be indexed under ParentA");
+        assertTrue(database.getEntriesForCitationKey("ParentB").contains(child), "Child should be indexed under ParentB");
+    }
+
+    @Test
+    void changingOneKeyInCommaSeparatedFieldUpdatesIndex() {
+        BibDatabase database = new BibDatabase();
+        BibEntry child = new BibEntry(StandardEntryType.Article);
+        database.insertEntry(child);
+
+        // set multiple links in related field
+        child.setField(StandardField.RELATED, "ParentA, ParentB");
+
+        // change a key in multiple key entries field
+        child.setField(StandardField.RELATED, "ParentC, ParentB");
+
+        // verify if the change is done in  the child related multiple entry field
+        assertTrue(database.getEntriesForCitationKey("ParentC").contains(child), "Child should be in the new ParentC set");
+        assertTrue(database.getEntriesForCitationKey("ParentB").contains(child), "Child should still be in the ParentB set");
+        assertFalse(database.getEntriesForCitationKey("ParentA").contains(child), "Child should be removed from the old ParentA set");
     }
 }

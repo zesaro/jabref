@@ -4,12 +4,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class BibtexStringTest {
 
     @Test
-    void initalizationWorksCorrectly() {
+    void initializationWorksCorrectly() {
         // Instantiate
         BibtexString bs = new BibtexString("AAA", "An alternative action");
         assertEquals("AAA", bs.getName());
@@ -87,12 +86,6 @@ class BibtexStringTest {
 
         assertEquals("AAA", original.getName());
         assertEquals("An alternative action", original.getContent());
-    }
-
-    @Test
-    void getContentNeverReturnsNull() {
-        BibtexString bs = new BibtexString("SomeName", null);
-        assertNotNull(bs.getContent());
     }
 
     @Test

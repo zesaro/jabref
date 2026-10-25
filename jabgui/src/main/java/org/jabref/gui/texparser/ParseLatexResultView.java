@@ -37,7 +37,7 @@ public class ParseLatexResultView extends BaseDialog<Void> {
 
         ViewLoader.view(this).load().setAsDialogPane(this);
 
-        ControlHelper.setAction(importButtonType, getDialogPane(), event -> {
+        ControlHelper.setAction(importButtonType, getDialogPane(), _ -> {
             viewModel.importButtonClicked();
             close();
         });
@@ -55,7 +55,7 @@ public class ParseLatexResultView extends BaseDialog<Void> {
                 .withGraphic(reference -> {
                     Text referenceText = new Text(reference.getDisplayText());
                     if (reference.isHighlighted()) {
-                        referenceText.setStyle("-fx-fill: -fx-accent");
+                        referenceText.getStyleClass().add("parse-latex-reference-text");
                     }
                     return referenceText;
                 })

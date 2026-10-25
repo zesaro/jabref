@@ -8,7 +8,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -193,7 +192,7 @@ public class StringUtil {
         // remove all whitespace at the end of the string, this especially includes \r created when the field content has \r\n as line separator
         addWrappedLine(result, CharMatcher.whitespace().trimTrailingFrom(lines[0]), wrapAmount, newline);
         for (int i = 1; i < lines.length; i++) {
-            if (lines[i].trim().isEmpty()) {
+            if (lines[i].isBlank()) {
                 result.append(newline);
                 result.append('\t');
             } else {
@@ -379,17 +378,18 @@ public class StringUtil {
     /// We do NOT use UNIX line breaks as the user explicitly configures its linebreaks and this method is used in bibtex field writing
     ///
     /// <h4>Example</h4>
-    /// <pre>{@code
+    /// ```text
     /// Legacy Macintosh \r -> OS.NEWLINE
     /// Windows \r\n -> OS.NEWLINE
-    /// }</pre>
+    /// ```
     ///
     /// @return a String with only OS.NEWLINE as line breaks
     public static String unifyLineBreaks(String s, String newline) {
         return LINE_BREAKS.matcher(s).replaceAll(newline);
     }
 
-    /// Checks if the given String has exactly one pair of surrounding curly braces <br>
+    /// Checks if the given String has exactly one pair of surrounding curly braces
+    ///
     /// Strings with escaped characters in curly braces at the beginning and end are respected, too
     ///
     /// @param toCheck The string to check
@@ -519,22 +519,16 @@ public class StringUtil {
         return out.toString();
     }
 
-    /*
-     * @param  buf       String to be tokenized
-     * @param  delimstr  Delimiter string
-     * @return list      {@link java.util.List} of <tt>String</tt>
-     */
-    public static List<String> tokenizeToList(String buf, String delimstr) {
-        List<String> list = new ArrayList<>();
-        String buffer = buf + '\n';
-
-        StringTokenizer st = new StringTokenizer(buffer, delimstr);
-
-        while (st.hasMoreTokens()) {
-            list.add(st.nextToken());
-        }
-
-        return list;
+    /// @param buffer    String to be tokenized
+    /// @param delimiter Delimiter string
+    /// @return list      [java.util.List] of `String`
+    public static List<String> tokenizeToList(String buffer, String delimiter) {
+        // delimiter is a set of characters, so it is turned into a character class.
+        // \Q...\E keeps any regex metacharacter inside the class literal.
+        return Pattern.compile("[\\Q" + delimiter + "\\E]")
+                      .splitAsStream(buffer + '\n')
+                      .filter(token -> !token.isEmpty())
+                      .toList();
     }
 
     /// Limits the length of a string to a maximum length.
@@ -569,29 +563,6 @@ public class StringUtil {
         return result;
     }
 
-    /// Return a String with n spaces
-    ///
-    /// @param n Number of spaces
-    /// @return String with n spaces
-    public static String repeatSpaces(int n) {
-        return repeat(Math.max(0, n), ' ');
-    }
-
-    /// Return a String with n copies of the char c
-    ///
-    /// @param n Number of copies
-    /// @param c char to copy
-    /// @return String with n copies of c
-    public static String repeat(int n, char c) {
-        StringBuilder resultSB = new StringBuilder(n);
-
-        for (int i = 0; i < n; i++) {
-            resultSB.append(c);
-        }
-
-        return resultSB.toString();
-    }
-
     public static boolean isNullOrEmpty(@Nullable String toTest) {
         return (toTest == null) || toTest.isEmpty();
     }
@@ -605,7 +576,7 @@ public class StringUtil {
     }
 
     /// Checks if a CharSequence is not empty (""), not null and not whitespace only.
-    public static boolean isNotBlank(String string) {
+    public static boolean isNotBlank(@Nullable String string) {
         return !isBlank(string);
     }
 
@@ -747,7 +718,7 @@ public class StringUtil {
             sb.append(WRAPPED_LINE_PREFIX);
             sb.append(pair.getKey());
 
-            sb.append(StringUtil.repeatSpaces(padding));
+            sb.repeat(" ", padding);
 
             sb.append(STRING_TABLE_DELIMITER);
             sb.append(pair.getValue());
@@ -755,5 +726,42 @@ public class StringUtil {
         }
 
         return sb.toString();
+    }
+
+    /// Splits a string by whitespace, treating backslash-escaped spaces as part of the same token.
+    ///
+    /// Example: `""C:\Current Python\python.exe" -m ocrmypdf"` -> `[""C:\Current Python\python.exe"", "-m", "ocrmypdf"]`
+    ///
+    /// @param path the string to split
+    /// @return a list of tokens
+    public static ArrayList<String> splitRespectingEscapedWhitespace(String path) {
+        ArrayList<String> result = new ArrayList<>();
+        // first check if the path contains a slash or backslash, if so it gets the first space after the last slash
+        // then it splits the rest of the string by spaces, otherwise it just splits the whole string by spaces
+        if (path.contains("/") || path.contains("\\")) {
+            int lastSlash = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
+            lastSlash = path.indexOf(" ", lastSlash);
+            if (lastSlash == -1) {
+                return new ArrayList<>(List.of(path));
+            }
+            result.add(path.substring(0, lastSlash));
+            for (int i = lastSlash + 1; i < path.length(); i++) {
+                int spaceIndex = path.indexOf(' ', i);
+                if (spaceIndex == -1) {
+                    result.add(path.substring(i));
+                    break;
+                } else {
+                    result.add(path.substring(i, spaceIndex));
+                    i = spaceIndex;
+                }
+            }
+        } else {
+            return new ArrayList<>(Arrays.asList(path.split(" ")));
+        }
+        return result;
+    }
+
+    public static String makeSafe(@Nullable String string) {
+        return Optional.ofNullable(string).orElse("");
     }
 }

@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 /// and the options relevant for this file in Defaults.
 ///
 ///
-/// To get an instance for a .bib file, use {@link org.jabref.logic.importer.fileformat.BibtexParser}.
+/// To get an instance for a .bib file, use [org.jabref.logic.importer.fileformat.BibtexParser].
 ///
 @AllowedToUseLogic("because it needs access to shared database features")
 @NullMarked
@@ -52,7 +52,7 @@ public class BibDatabaseContext {
 
     private final BibDatabase database;
 
-    private MetaData metaData;
+    private final MetaData metaData;
 
     /// Generate a random UID for unique of the concrete context
     /// In contrast to hashCode this stays unique
@@ -84,7 +84,7 @@ public class BibDatabaseContext {
         this.location = DatabaseLocation.LOCAL;
     }
 
-    public BibDatabaseContext(BibDatabase database, MetaData metaData, Path path) {
+    public BibDatabaseContext(BibDatabase database, MetaData metaData, @Nullable Path path) {
         this(database, metaData, path, DatabaseLocation.LOCAL);
     }
 
@@ -120,23 +120,31 @@ public class BibDatabaseContext {
         this.path = null;
     }
 
+    /// The id used to address this library from the outside: the REST API (`/libraries/{id}/...`),
+    /// cite-as-you-write (`libraryid=`), JabMap and in-app links (`jabref://libraries/{id}/entries/{key}`).
+    /// Empty for libraries that have not been saved to disk yet.
+    public Optional<String> getLibraryId() {
+        return getDatabasePath().map(path -> path.getFileName() + "-" + BackupFileUtil.getUniqueFilePrefix(path));
+    }
+
     public BibDatabase getDatabase() {
         return database;
+    }
+
+    /// The keyword separator of this library, falling back to the given separator (typically the global preference) when the library does not declare one
+    public Character getKeywordSeparator(Character fallbackKeywordSeparator) {
+        return metaData.getKeywordSeparator().orElse(fallbackKeywordSeparator);
     }
 
     public MetaData getMetaData() {
         return metaData;
     }
 
-    public void setMetaData(MetaData metaData) {
-        this.metaData = metaData;
-    }
-
     public boolean isBiblatexMode() {
         return getMode() == BibDatabaseMode.BIBLATEX;
     }
 
-    /// Returns whether this .bib file belongs to a {@link org.jabref.model.study.Study}
+    /// Returns whether this .bib file belongs to a [org.jabref.model.study.Study]
     public boolean isStudy() {
         return this.getDatabasePath()
                    .map(path -> Crawler.FILENAME_STUDY_RESULT_BIB.equals(path.getFileName().toString()) &&
@@ -145,58 +153,84 @@ public class BibDatabaseContext {
     }
 
     /// Look up the directories set up for this database.
-    /// There can be up to four directories definitions for these files:
-    /// <ol>
-    /// - next to the .bib file.
-    /// - the preferences can specify a default one.
-    /// - the database's metadata can specify a library-specific directory.
-    /// - the database's metadata can specify a user-specific directory.
-    /// </ol>
+    /// There can be up to four directory definitions for these files:
+    ///
+    /// 1. next to the .bib file.
+    /// 2. the preferences can specify a default one.
+    /// 3. the database's metadata can specify a library-specific directory.
+    /// 4. the database's metadata can specify a user-specific directory.
+    ///
     ///
     /// The settings are prioritized in the following order, and the first defined setting is used:
-    /// <ol>
-    /// - user-specific metadata directory
-    /// - general metadata directory
-    /// - BIB file directory (if configured in the preferences AND none of the two above directories are configured)
-    /// - preferences directory (if .bib file directory should not be used according to the (global) preferences)
-    /// </ol>
+    ///
+    /// 1. user-specific metadata directory
+    /// 2. general metadata directory
+    /// 3. BIB file directory (if configured in the preferences AND none of the two above directories are configured)
+    /// 4. preferences directory (if .bib file directory should not be used according to the (global) preferences)
     ///
     /// @param preferences The fileDirectory preferences
     /// @return List of existing absolute paths
     public List<Path> getFileDirectories(FilePreferences preferences) {
-        // Paths are a) ordered and b) should be contained only once in the result
-        SequencedSet<Path> fileDirs = new LinkedHashSet<>(3);
+        SequencedSet<Path> fileDirs = new LinkedHashSet<>();
+        FileDirectories directories = getAllFileDirectories(preferences);
 
-        Optional<Path> userFileDirectory = metaData.getUserFileDirectory(preferences.getUserAndHost()).map(this::getFileDirectoryPath);
-        userFileDirectory.ifPresent(fileDirs::add);
-
-        Optional<Path> librarySpecificFileDirectory = metaData.getLibrarySpecificFileDirectory().map(this::getFileDirectoryPath);
-        librarySpecificFileDirectory.ifPresent(fileDirs::add);
+        directories.getUserDirectoryOpt().ifPresent(fileDirs::add);
+        directories.getLibraryDirectoryOpt().ifPresent(fileDirs::add);
 
         // fileDirs.isEmpty() is true after these two if there are no directories set in the BIB file itself:
-        //   1) no user-specific file directory set (in the metadata of the bib file) and
-        //   2) no library-specific file directory is set (in the metadata of the bib file)
+        // 1) no user-specific file directory set (in the metadata of the bib file) and
+        // 2) no library-specific file directory is set (in the metadata of the bib file)
 
-        // BIB file directory or main file directory (according to (global) preferences)
-        if (preferences.shouldStoreFilesRelativeToBibFile()) {
-            getDatabasePath().ifPresent(dbPath -> {
-                Path parentPath = dbPath.getParent();
-                if (parentPath == null) {
-                    parentPath = Path.of(System.getProperty("user.dir"));
-                    LOGGER.warn("Parent path of database file {} is null. Falling back to {}.", dbPath, parentPath);
-                }
-                Objects.requireNonNull(parentPath, "BibTeX database parent path is null");
-                fileDirs.add(parentPath.toAbsolutePath());
-            });
-        } else {
-            preferences.getMainFileDirectory()
-                       .ifPresent(fileDirs::add);
-        }
+        directories.getFallbackDirectoryOpt().ifPresent(fileDirs::add);
 
         return new ArrayList<>(fileDirs);
     }
 
-    /// Returns the first existing file directory from  {@link #getFileDirectories(FilePreferences)}
+    /// Look up all configured file directories of this database.
+    /// The returned record contains the following directories:
+    ///
+    /// 1. user-specific directory
+    /// 2. library-specific directory
+    /// 3. BIB file directory or Main file directory (depending on preferences)
+    ///
+    /// @param preferences The file directory preferences
+    /// @return fixed-size record containing absolute paths (if configured)
+    public FileDirectories getAllFileDirectories(FilePreferences preferences) {
+        Path userFileDirectory = metaData.getUserFileDirectory(preferences.getUserAndHost())
+                                         .map(this::getFileDirectoryPath)
+                                         .orElse(null);
+        Path librarySpecificFileDirectory = metaData.getLibrarySpecificFileDirectory()
+                                                    .map(this::getFileDirectoryPath)
+                                                    .orElse(null);
+
+        Path bibOrMainFileDirectory;
+
+        // BIB file directory or Main file directory (according to (global) preferences)
+        if (preferences.shouldStoreFilesRelativeToBibFile()) {
+            bibOrMainFileDirectory = getDatabaseDirectory().orElse(null);
+        } else {
+            bibOrMainFileDirectory = preferences.getMainFileDirectory().orElse(null);
+        }
+
+        return new FileDirectories(
+                userFileDirectory,
+                librarySpecificFileDirectory,
+                bibOrMainFileDirectory
+        );
+    }
+
+    public Optional<Path> getDatabaseDirectory() {
+        return getDatabasePath().map(dbPath -> {
+            Path parentPath = dbPath.getParent();
+            if (parentPath == null) {
+                parentPath = Path.of(System.getProperty("user.dir"));
+                LOGGER.warn("Parent path of database file {} is null. Falling back to {}.", dbPath, parentPath);
+            }
+            return parentPath.toAbsolutePath();
+        });
+    }
+
+    /// Returns the first existing file directory from  [#getFileDirectories(FilePreferences)]
     ///
     /// @return the path - or an empty optional, if none of the directories exists
     public Optional<Path> getFirstExistingFileDir(FilePreferences preferences) {
@@ -334,7 +368,7 @@ public class BibDatabaseContext {
 
     /// Get the generated UID for the current context. Can be used to distinguish contexts with changing metadata etc
     ///
-    /// This is required, because of {@link #hashCode()} implementation.
+    /// This is required, because of [#hashCode()] implementation.
     ///
     /// @return The generated UID in UUIDv4 format with the prefix bibdatabasecontext_
     public String getUid() {

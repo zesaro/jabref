@@ -10,6 +10,7 @@ import org.jabref.model.entry.field.FieldFactory;
 import org.jabref.model.entry.field.InternalField;
 import org.jabref.model.entry.field.StandardField;
 import org.jabref.model.search.SearchFlags;
+import org.jabref.model.search.query.SearchQuery;
 import org.jabref.model.search.query.SearchQueryNode;
 import org.jabref.search.SearchBaseVisitor;
 import org.jabref.search.SearchParser;
@@ -26,6 +27,9 @@ public class SearchQueryExtractorVisitor extends SearchBaseVisitor<List<SearchQu
 
     @Override
     public List<SearchQueryNode> visitStart(SearchParser.StartContext ctx) {
+        if (ctx.andExpression() == null) {
+            return List.of();
+        }
         return visit(ctx.andExpression());
     }
 
@@ -86,14 +90,12 @@ public class SearchQueryExtractorVisitor extends SearchBaseVisitor<List<SearchQu
                 return List.of();
             }
         }
-        String term = SearchQueryConversion.unescapeSearchValue(ctx.searchValue());
-
-        // if not regex, escape the backslashes, because the highlighter uses regex
+        String term = SearchQuery.unescapeSearchValue(ctx.searchValue());
 
         // unfielded terms, check the search bar flags
         if (ctx.FIELD() == null) {
             if (!searchBarRegex) {
-                term = term.replace("\\", "\\\\");
+                term = SearchQueryConversion.escapeRegexLiteral(term);
             }
             return List.of(new SearchQueryNode(Optional.empty(), term));
         }
@@ -103,12 +105,12 @@ public class SearchQueryExtractorVisitor extends SearchBaseVisitor<List<SearchQu
 
         // Pseudo-fields
         field = switch (field) {
-            case "key" ->
+            case SearchFieldConstants.KEY ->
                     InternalField.KEY_FIELD.getName();
-            case "anykeyword" ->
+            case SearchFieldConstants.ANY_KEYWORD ->
                     StandardField.KEYWORDS.getName();
-            case "anyfield" ->
-                    "any";
+            case SearchFieldConstants.ANY_FIELD_ALIAS ->
+                    SearchFieldConstants.ANY_FIELD;
             default ->
                     field;
         };
@@ -116,11 +118,11 @@ public class SearchQueryExtractorVisitor extends SearchBaseVisitor<List<SearchQu
         if (ctx.operator() != null) {
             int operator = ctx.operator().getStart().getType();
             if (operator != SearchParser.REQUAL && operator != SearchParser.CREEQUAL) {
-                term = term.replace("\\", "\\\\");
+                term = SearchQueryConversion.escapeRegexLiteral(term);
             }
         }
 
-        if ("any".equals(field)) {
+        if (SearchFieldConstants.ANY_FIELD.equals(field)) {
             return List.of(new SearchQueryNode(Optional.empty(), term));
         }
         return List.of(new SearchQueryNode(Optional.of(FieldFactory.parseField(field)), term));

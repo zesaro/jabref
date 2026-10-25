@@ -10,6 +10,7 @@ public class URLs {
     public static final String GITHUB_URL = "https://github.com/JabRef/jabref";
     public static final String MASTODON_URL = "https://foojay.social/@jabref";
     public static final String DONATE_URL = "https://donations.jabref.org";
+    public static final String CONTRIBUTE_URL = "https://contribute.jabref.org";
     public static final String DEV_VERSION_LINK_URL = "https://builds.jabref.org/master/";
     public static final String CHANGELOG_URL = "https://github.com/JabRef/jabref/blob/main/CHANGELOG.md";
     public static final String HELP_URL = "https://docs.jabref.org/";
@@ -43,4 +44,7 @@ public class URLs {
     public static final String SEMANTIC_SCHOLAR_URL = "https://www.semanticscholar.org/";
     public static final String SCITE_REPORTS_URL_BASE = "https://scite.ai/reports/";
     public static final String SCITE_URL = "https://scite.ai/";
+
+    // AI URLs
+    public static final String DJL_PRIVACY_POLICY_URL = "https://github.com/deepjavalibrary/djl/discussions/3370#discussioncomment-10233632";
 }

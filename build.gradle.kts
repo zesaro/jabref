@@ -1,16 +1,16 @@
 plugins {
     id("org.jabref.gradle.base.repositories")
     id("org.jabref.gradle.feature.compile") // for openrewrite
-    id("org.openrewrite.rewrite") version "7.30.0"
-    id("org.itsallcode.openfasttrace") version "3.1.1"
-    id("org.cyclonedx.bom") version "3.2.4"
+    id("org.jabref.gradle.feature.requirementtracing")
+    id("org.openrewrite.rewrite") version "7.39.0"
+    id("org.cyclonedx.bom") version "3.5.1"
 }
 
 // OpenRewrite should rewrite all sources
 // This is the behavior when applied in the root project (https://docs.openrewrite.org/reference/gradle-plugin-configuration#multi-module-gradle-projects)
 
 dependencies {
-    rewrite(platform("org.openrewrite.recipe:rewrite-recipe-bom:3.28.0"))
+    rewrite(platform("org.openrewrite.recipe:rewrite-recipe-bom:3.37.0"))
     rewrite("org.openrewrite.recipe:rewrite-static-analysis")
     rewrite("org.openrewrite.recipe:rewrite-logging-frameworks")
     rewrite("org.openrewrite.recipe:rewrite-testing-frameworks")
@@ -35,6 +35,19 @@ rewrite {
     failOnDryRunResults = true
 }
 
+// OpenRewrite parses with the JDK running Gradle, not with the toolchain.
+// An older JDK's parser mangles Java 25 syntax, e.g., `catch (Throwable _)` becomes `catch (Throwable_ _)`:
+// https://github.com/openrewrite/rewrite-migrate-java/issues/1239
+// A newer JDK fails to parse dozens of files:
+// https://github.com/openrewrite/rewrite/issues/7554
+tasks.matching { it.name.startsWith("rewrite") }.configureEach {
+    doFirst {
+        require(JavaVersion.current() == JavaVersion.VERSION_25) {
+            "OpenRewrite must run on JDK 25 (Gradle runs on ${JavaVersion.current()}). Set JAVA_HOME accordingly."
+        }
+    }
+}
+
 requirementTracing {
     inputDirectories.setFrom(
         files(
@@ -51,6 +64,25 @@ requirementTracing {
             "jabsrv/src/test/java"
         )
     )
+
+    filteredArtifactTypes =
+        listOf(
+            "impl",
+            "utest",
+            "model",
+            "guard",
+            "pp",
+            "feat",
+            "req",
+            "adr"
+        )
+
+    filterWantedStatuses =
+        setOf(
+            // Requirements without `Status` field are treated as `approved`.
+            "approved"
+        )
+
     // TODO: Short Tag Importer: https://github.com/itsallcode/openfasttrace-gradle#configuring-the-short-tag-importer
 }
 

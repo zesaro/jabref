@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 import org.jabref.logic.importer.ImportFormatPreferences;
 import org.jabref.model.entry.BibEntry;
 import org.jabref.model.entry.field.StandardField;
+import org.jabref.model.entry.field.UnknownField;
 import org.jabref.model.entry.types.StandardEntryType;
 import org.jabref.support.BibEntryAssert;
 
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Answers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -116,13 +118,75 @@ class MedlinePlainImporterTest {
     }
 
     @Test
+    void meshTermsAreParsedIntoIndividualKeywords() throws IOException {
+        try (BufferedReader reader = readerForString("""
+                PMID-12345678
+                MH  - *Kidney Diseases/diagnosis/epidemiology
+                MH  - Female
+                OT  - some other term""")) {
+            List<BibEntry> actualEntries = importer.importDatabase(reader).getDatabase().getEntries();
+
+            BibEntry expectedEntry = new BibEntry()
+                    .withField(StandardField.PMID, "12345678")
+                    .withField(StandardField.KEYWORDS,
+                            "Kidney Diseases*/diagnosis, Kidney Diseases*/epidemiology, Female, some other term");
+
+            assertEquals(List.of(expectedEntry), actualEntries);
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource(textBlock = """
+            10.1145/2594455, 10.1145/2594455
+            https://doi.org/10.1145/2594455, 10.1145/2594455
+            """)
+    void mapsArticleDoiToStandardDoi(String articleDoi, String expectedDoi) throws IOException {
+        String medline = """
+                PMID-12345678
+                AID - %s [doi]
+                AID - S1234 [pii]
+                """.formatted(articleDoi);
+        List<BibEntry> actualEntries = importer.importDatabase(medline).getDatabase().getEntries();
+
+        BibEntry expected = new BibEntry()
+                .withField(StandardField.PMID, "12345678")
+                .withField(StandardField.DOI, expectedDoi)
+                .withField(new UnknownField("article-pii"), "S1234");
+
+        assertEquals(List.of(expected), actualEntries);
+    }
+
+    @ParameterizedTest
+    @CsvSource(textBlock = """
+            10.1145/2594455 [doi], Journal. 2026;5:67., 10.1145/2594455
+            e123 [pii], Journal. 2026;5:67. doi: 10.4103/2277-9175.180636., 10.4103/2277-9175.180636
+            10.1145/2594455 [doi], Journal. 2026;5:67. doi: 10.4103/2277-9175.180636., 10.1145/2594455
+            """)
+    void mapsDoiFromLocationIdOrSourceToStandardDoi(String locationId, String source, String expectedDoi) throws IOException {
+        String medline = """
+                PMID-12345678
+                LID - %s
+                SO  - %s
+                """.formatted(locationId, source);
+        List<BibEntry> actualEntries = importer.importDatabase(medline).getDatabase().getEntries();
+
+        BibEntry expected = new BibEntry()
+                .withField(StandardField.PMID, "12345678")
+                .withField(StandardField.DOI, expectedDoi)
+                .withField(new UnknownField("location-id"), locationId)
+                .withField(new UnknownField("source"), source);
+
+        assertEquals(List.of(expected), actualEntries);
+    }
+
+    @Test
     void emptyFileImport() throws IOException {
         List<BibEntry> emptyEntries = importer.importDatabase(readerForString("")).getDatabase().getEntries();
         assertEquals(List.of(), emptyEntries);
     }
 
     @ParameterizedTest
-    @CsvSource({
+    @ValueSource(strings = {
             "MedlinePlainImporterTestCompleteEntry",
             "MedlinePlainImporterTestMultiAbstract",
             "MedlinePlainImporterTestMultiTitle",

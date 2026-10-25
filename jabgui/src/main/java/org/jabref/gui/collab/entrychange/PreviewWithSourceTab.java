@@ -46,7 +46,8 @@ public class PreviewWithSourceTab {
         previewViewer.setEntry(entry);
 
         CodeArea codeArea = new CodeArea();
-        codeArea.setId("bibtexcodearea");
+        codeArea.setId("bibtex-code-area");
+        codeArea.getStyleClass().addAll("source-preview-code-area", "padding-4");
         codeArea.setWrapText(true);
         codeArea.setDisable(true);
 
@@ -62,7 +63,7 @@ public class PreviewWithSourceTab {
 
         try {
             codeArea.appendText(getSourceString(entry, bibDatabaseContext.getMode(), preferences.getFieldPreferences(), entryTypesManager));
-        } catch (IOException e) {
+        } catch (IOException _) {
             LOGGER.error("Error getting Bibtex: {}", entry);
         }
         codeArea.setEditable(false);
@@ -78,7 +79,7 @@ public class PreviewWithSourceTab {
                                    BibEntryTypesManager entryTypesManager) throws IOException {
         StringWriter writer = new StringWriter();
         BibWriter bibWriter = new BibWriter(writer, OS.NEWLINE);
-        FieldWriter fieldWriter = FieldWriter.buildIgnoreHashes(fieldPreferences);
+        FieldWriter fieldWriter = new FieldWriter(fieldPreferences);
         new BibEntryWriter(fieldWriter, entryTypesManager).write(entry, bibWriter, type);
         return writer.toString();
     }

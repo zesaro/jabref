@@ -5,6 +5,10 @@ parent: Decision Records
 
 # Store Chats in MVStore
 
+<!-- [dsn->req~ai.summarization.general.storage~1] -->
+<!-- [dsn->req~ai.chat.entries.history-storage~1] -->
+<!-- [dsn->req~ai.chat.groups.history-storage~1] -->
+
 ## Context and Problem Statement
 
 This is a follow-up to [ADR-032](0032-store-chats-in-local-user-folder.md).
@@ -51,3 +55,7 @@ Chosen option: "MVStore", because it is simple and memory-efficient.
 * Good, because we have the full control
 * Bad, because involves writing our own language and parser
 * Bad, because we need to implement optimizations found in databases on our own (storing some data in RAM, other on disk)
+
+## More information
+
+For the same logic, the summaries are stored in MVStore.

@@ -7,7 +7,6 @@ import java.util.Map;
 
 import org.jabref.logic.bibtex.FieldPreferences;
 import org.jabref.logic.bibtex.FieldWriter;
-import org.jabref.logic.bibtex.InvalidFieldValueException;
 import org.jabref.model.entry.Month;
 import org.jabref.model.entry.field.Field;
 import org.jabref.model.entry.field.FieldFactory;
@@ -16,16 +15,19 @@ import org.jabref.model.entry.field.StandardField;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@NullMarked
 class BstVMVisitor extends BstBaseVisitor<Integer> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BstVMVisitor.class);
 
     private final BstVMContext bstVMContext;
     private final StringBuilder bbl;
 
-    private BstEntry selectedBstEntry = null;
+    @Nullable private BstEntry selectedBstEntry = null;
 
     public record Identifier(String name) {
     }
@@ -42,7 +44,7 @@ class BstVMVisitor extends BstBaseVisitor<Integer> {
         }
 
         for (BstParser.IdentifierContext identifierContext : ctx.ids.identifier()) {
-            bstVMContext.strings().put(identifierContext.getText(), null);
+            bstVMContext.strings().put(identifierContext.getText(), "");
         }
         return BstVM.TRUE;
     }
@@ -60,7 +62,7 @@ class BstVMVisitor extends BstBaseVisitor<Integer> {
         String name = ctx.id.getText();
         LOGGER.trace("Function: {}", name);
         bstVMContext.functions().put(name,
-                (visitor, functionContext) -> visitor.visit(ctx.function));
+                (visitor, _) -> visitor.visit(ctx.function));
         return BstVM.TRUE;
     }
 
@@ -68,49 +70,48 @@ class BstVMVisitor extends BstBaseVisitor<Integer> {
     public Integer visitMacroCommand(BstParser.MacroCommandContext ctx) {
         String replacement = ctx.repl.getText().substring(1, ctx.repl.getText().length() - 1);
         bstVMContext.functions().put(ctx.id.getText(),
-                (visitor, functionContext) -> bstVMContext.stack().push(replacement));
+                (_, _) -> bstVMContext.stack().push(replacement));
         return BstVM.TRUE;
     }
 
     @Override
     public Integer visitReadCommand(BstParser.ReadCommandContext ctx) {
         FieldWriter fieldWriter = new FieldWriter(new FieldPreferences(true, List.of(StandardField.MONTH), List.of()));
-        for (BstEntry e : bstVMContext.entries()) {
-            for (Map.Entry<String, String> mEntry : e.fields.entrySet()) {
-                Field field = FieldFactory.parseField(mEntry.getKey());
-                String fieldValue = e.entry.getResolvedFieldOrAlias(field, bstVMContext.bibDatabase())
-                                           .map(content -> {
-                                               try {
-                                                   String result = fieldWriter.write(field, content);
-                                                   if (result.startsWith("{")) {
-                                                       // Strip enclosing {} from the output
-                                                       return result.substring(1, result.length() - 1);
-                                                   }
-                                                   if (field == StandardField.MONTH) {
-                                                       // We don't have the internal BibTeX strings at hand.
-                                                       // Thus, we look up the full month name in the generic table.
-                                                       return Month.parse(result)
-                                                                   .map(Month::getFullName)
-                                                                   .orElse(result);
-                                                   }
-                                                   return result;
-                                               } catch (InvalidFieldValueException invalidFieldValueException) {
-                                                   // in case there is something wrong with the content, just return the content itself
-                                                   return content;
-                                               }
-                                           })
-                                           .orElse(null);
-                mEntry.setValue(fieldValue);
+        for (BstEntry bstEntry : bstVMContext.entries()) {
+            if (!bstEntry.fields.containsKey(StandardField.CROSSREF.getName())) {
+                String crossref = bstEntry.entry.getResolvedFieldOrAlias(StandardField.CROSSREF, bstVMContext.bibDatabase())
+                                                .map(content -> normalizeFieldValue(content, fieldWriter, StandardField.CROSSREF))
+                                                .orElse(null);
+                bstEntry.fields.put(StandardField.CROSSREF.getName(), crossref);
             }
-        }
 
-        for (BstEntry e : bstVMContext.entries()) {
-            if (!e.fields.containsKey(StandardField.CROSSREF.getName())) {
-                e.fields.put(StandardField.CROSSREF.getName(), null);
+            for (Map.Entry<String, @Nullable String> fieldMapEntry : bstEntry.fields.entrySet()) {
+                Field field = FieldFactory.parseField(fieldMapEntry.getKey());
+                bstEntry.entry.getResolvedFieldOrAlias(field, bstVMContext.bibDatabase())
+                              .map(content -> normalizeFieldValue(content, fieldWriter, field))
+                              .ifPresent(fieldMapEntry::setValue);
             }
         }
 
         return BstVM.TRUE;
+    }
+
+    private static String normalizeFieldValue(String content, FieldWriter fieldWriter, Field field) {
+        String result = fieldWriter.write(field, content);
+        if (result.startsWith("{")
+                && result.endsWith("}")
+                && !FieldWriter.isEscaped(result, result.length() - 1)) {
+            // Strip enclosing {} from the output
+            return result.substring(1, result.length() - 1);
+        }
+        if (field == StandardField.MONTH) {
+            // We don't have the internal BibTeX strings at hand.
+            // Thus, we look up the full month name in the generic table.
+            return Month.parse(result)
+                        .map(Month::getFullName)
+                        .orElse(result);
+        }
+        return result;
     }
 
     @Override
@@ -170,7 +171,7 @@ class BstVMVisitor extends BstBaseVisitor<Integer> {
         BstParser.IdListOptContext entryStrings = ctx.idListOpt(2);
         for (BstParser.IdentifierContext identifierContext : entryStrings.identifier()) {
             for (BstEntry entry : bstVMContext.entries()) {
-                entry.localStrings.put(identifierContext.getText(), null);
+                entry.localStrings.put(identifierContext.getText(), "");
             }
         }
 

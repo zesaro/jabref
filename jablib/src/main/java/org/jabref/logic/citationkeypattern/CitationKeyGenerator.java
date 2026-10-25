@@ -15,22 +15,16 @@ import org.jabref.model.database.BibDatabaseContext;
 import org.jabref.model.entry.BibEntry;
 import org.jabref.model.entry.types.EntryType;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.CharMatcher;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/// This is the utility class of the LabelPattern package.
 public class CitationKeyGenerator extends BracketedPattern {
 
     /// All single characters that we can use for extending a key to make it unique.
     public static final String APPENDIX_CHARACTERS = "abcdefghijklmnopqrstuvwxyz";
-
-    /// List of unwanted characters. These will be removed at the end.
-    /// Note that `+` is a wanted character to indicate "et al." in authorsAlpha.
-    /// Example: `ABC+`. See `org.jabref.logic.citationkeypattern.BracketedPatternTest#authorsAlpha()` for examples.
-    ///
-    /// See also #DISALLOWED_CHARACTERS
-    public static final String DEFAULT_UNWANTED_CHARACTERS = "?!;^`ʹ";
 
     /// Source of disallowed characters: <https://tex.stackexchange.com/a/408548/9075>
     /// These characters are disallowed in BibTeX keys.
@@ -42,19 +36,29 @@ public class CitationKeyGenerator extends BracketedPattern {
     private final BibDatabase database;
     private final CitationKeyPatternPreferences citationKeyPatternPreferences;
     private final String unwantedCharacters;
+    private final Character keywordSeparator;
 
     public CitationKeyGenerator(BibDatabaseContext bibDatabaseContext, CitationKeyPatternPreferences citationKeyPatternPreferences) {
         this(bibDatabaseContext.getMetaData().getCiteKeyPatterns(citationKeyPatternPreferences.getKeyPatterns()),
                 bibDatabaseContext.getDatabase(),
-                citationKeyPatternPreferences);
+                citationKeyPatternPreferences,
+                bibDatabaseContext.getKeywordSeparator(citationKeyPatternPreferences.getKeywordSeparator()));
     }
 
     public CitationKeyGenerator(@NonNull AbstractCitationKeyPatterns citeKeyPattern,
                                 @NonNull BibDatabase database,
                                 @NonNull CitationKeyPatternPreferences citationKeyPatternPreferences) {
+        this(citeKeyPattern, database, citationKeyPatternPreferences, citationKeyPatternPreferences.getKeywordSeparator());
+    }
+
+    private CitationKeyGenerator(AbstractCitationKeyPatterns citeKeyPattern,
+                                 BibDatabase database,
+                                 CitationKeyPatternPreferences citationKeyPatternPreferences,
+                                 Character keywordSeparator) {
         this.citeKeyPattern = citeKeyPattern;
         this.database = database;
         this.citationKeyPatternPreferences = citationKeyPatternPreferences;
+        this.keywordSeparator = keywordSeparator;
         this.unwantedCharacters = citationKeyPatternPreferences.getUnwantedCharacters();
     }
 
@@ -71,14 +75,13 @@ public class CitationKeyGenerator extends BracketedPattern {
         }
     }
 
-    public static String removeDefaultUnwantedCharacters(String key) {
-        return removeUnwantedCharacters(key, DEFAULT_UNWANTED_CHARACTERS);
-    }
-
-    public static String removeUnwantedCharacters(String key, String unwantedCharacters) {
+    @VisibleForTesting
+    static String removeUnwantedCharacters(String key, String unwantedCharacters) {
         String newKey = key.chars()
                            .filter(c -> unwantedCharacters.indexOf(c) == -1)
                            .filter(c -> !DISALLOWED_CHARACTERS.contains((char) c))
+                           .map(CitationKeyGenerator::normalizeSuperscriptOrSubscript)
+                           .filter(c -> c != -1)
                            .collect(
                                    StringBuilder::new,
                                    StringBuilder::appendCodePoint,
@@ -91,14 +94,11 @@ public class CitationKeyGenerator extends BracketedPattern {
         return StringUtil.replaceSpecialCharacters(newKey);
     }
 
-    public static String cleanKey(String key, String unwantedCharacters) {
-        return removeUnwantedCharacters(key, unwantedCharacters).replaceAll("\\s", "");
-    }
-
     /// Removes characters, unwanted characters that are illegal in citation keys
-    /// preserving Unicode and diacritical characters.
+    /// preserving Unicode (e.g., ²) and diacritical characters.
     ///
-    /// @param key the citation key to sanitize
+    /// @param key                the citation key to sanitize
+    /// @param unwantedCharacters - pass through [org.jabref.logic.citationkeypattern.CitationKeyPatternPreferences#getUnwantedCharacters()]
     /// @return the key with illegal and unwanted characters removed
     public static String removeUnwantedCharactersWithKeepDiacritics(String key, String unwantedCharacters) {
         return key.chars()
@@ -113,9 +113,45 @@ public class CitationKeyGenerator extends BracketedPattern {
                   .toString();
     }
 
-    /// Generate a citation key for the given {@link BibEntry}.
+    /// Maps Unicode superscript and subscript digits to their ASCII counterparts (e.g., ¹ → 1, ₂ → 2).
+    /// Other characters in the Superscripts and Subscripts block (e.g., ⁿ ⁱ ⁺ ⁻ ⁽ ⁾) are stripped by returning -1.
+    /// All other code points are returned unchanged.
+    private static int normalizeSuperscriptOrSubscript(int codePoint) {
+        // Latin-1 superscript digits ¹²³ live in the Latin-1 Supplement block at non-contiguous code points.
+        if (codePoint == 0x00B9) {
+            return '1';
+        }
+        if (codePoint == 0x00B2) {
+            return '2';
+        }
+        if (codePoint == 0x00B3) {
+            return '3';
+        }
+        // Superscript digits 0, 4..9 (U+2070, U+2074..U+2079)
+        if (codePoint == 0x2070) {
+            return '0';
+        }
+        if (codePoint >= 0x2074 && codePoint <= 0x2079) {
+            return '0' + (codePoint - 0x2070);
+        }
+        // Subscript digits 0..9 (U+2080..U+2089)
+        if (codePoint >= 0x2080 && codePoint <= 0x2089) {
+            return '0' + (codePoint - 0x2080);
+        }
+        // Strip remaining characters in the Superscripts and Subscripts block (non-digit modifiers and signs).
+        if (Character.UnicodeBlock.of(codePoint) == Character.UnicodeBlock.SUPERSCRIPTS_AND_SUBSCRIPTS) {
+            return -1;
+        }
+        return codePoint;
+    }
+
+    public static String cleanKey(String key, String unwantedCharacters) {
+        return CharMatcher.whitespace().removeFrom(removeUnwantedCharacters(key, unwantedCharacters));
+    }
+
+    /// Generate a citation key for the given [BibEntry].
     ///
-    /// @param entry a {@link BibEntry}
+    /// @param entry a [BibEntry]
     /// @return a citation key based on the user's preferences
     public String generateKey(@NonNull BibEntry entry) {
         String currentKey = entry.getCitationKey().orElse(null);
@@ -184,7 +220,7 @@ public class CitationKeyGenerator extends BracketedPattern {
     private String replaceWithRegex(String key) {
         // Remove Regular Expressions while generating Keys
         String regex = citationKeyPatternPreferences.getKeyPatternRegex();
-        if ((regex != null) && !regex.trim().isEmpty()) {
+        if ((regex != null) && !regex.isBlank()) {
             String replacement = citationKeyPatternPreferences.getKeyPatternReplacement();
             try {
                 key = key.replaceAll(regex, replacement);
@@ -205,12 +241,12 @@ public class CitationKeyGenerator extends BracketedPattern {
         return expandBrackets(citationKeyPattern.stringRepresentation(), expandBracketContent(entry));
     }
 
-    /// A helper method to create a {@link Function} that takes a single bracketed expression, expands it, and cleans the key.
+    /// A helper method to create a [Function] that takes a single bracketed expression, expands it, and cleans the key.
     ///
-    /// @param entry the {@link BibEntry} that a citation key is generated for
-    /// @return a cleaned citation key for the given {@link BibEntry}
+    /// @param entry the [BibEntry] that a citation key is generated for
+    /// @return a cleaned citation key for the given [BibEntry]
     private Function<String, String> expandBracketContent(BibEntry entry) {
-        Character keywordDelimiter = citationKeyPatternPreferences.getKeywordDelimiter();
+        Character keywordDelimiter = keywordSeparator;
 
         return (String bracket) -> {
             String expandedPattern;

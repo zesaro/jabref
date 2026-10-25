@@ -21,13 +21,13 @@ import org.jabref.model.groups.GroupTreeNode;
 import org.jabref.model.metadata.ContentSelector;
 import org.jabref.model.metadata.MetaData;
 
-/// Reading is done at {@link org.jabref.logic.importer.util.MetaDataParser}
+/// Reading is done at [org.jabref.logic.importer.util.MetaDataParser]
 public class MetaDataSerializer {
 
     private MetaDataSerializer() {
     }
 
-    /// Writes all data in the format &lt;key, serialized data>.
+    /// Writes all data in the format `<key, serialized data>`.
     /// Also serializes user-defined .blg file paths (if present).
     public static Map<String, String> getSerializedStringMap(MetaData metaData,
                                                              GlobalCitationKeyPatterns globalCiteKeyPatterns) {
@@ -45,9 +45,22 @@ public class MetaDataSerializer {
         if (metaData.isProtected()) {
             stringyMetaData.put(MetaData.PROTECTED_FLAG_META, List.of("true"));
         }
+        if (metaData.isGitAutoPull()) {
+            stringyMetaData.put(MetaData.GIT_AUTO_PULL, List.of("true"));
+        }
+        if (metaData.isGitAutoCommit()) {
+            stringyMetaData.put(MetaData.GIT_AUTO_COMMIT, List.of("true"));
+        }
+        if (metaData.isGitAutoPush()) {
+            stringyMetaData.put(MetaData.GIT_AUTO_PUSH, List.of("true"));
+        }
         stringyMetaData.putAll(serializeCiteKeyPatterns(metaData, globalCiteKeyPatterns));
         metaData.getMode().ifPresent(
                 mode -> stringyMetaData.put(MetaData.DATABASE_TYPE, List.of(mode.getAsString())));
+        metaData.getLibraryAbbreviationType().ifPresent(
+                abbreviationType -> stringyMetaData.put(MetaData.LIBRARY_ABBREVIATION_TYPE, List.of(abbreviationType.name())));
+        metaData.getKeywordSeparator().ifPresent(
+                separator -> stringyMetaData.put(MetaData.KEYWORD_SEPARATOR, List.of(separator.toString())));
         metaData.getLibrarySpecificFileDirectory().ifPresent(
                 path -> stringyMetaData.put(MetaData.FILE_DIRECTORY, List.of(path.trim())));
         metaData.getUserFileDirectories().forEach((user, path) -> stringyMetaData
@@ -57,6 +70,8 @@ public class MetaDataSerializer {
         metaData.getVersionDBStructure().ifPresent(
                 versionDBStructure -> stringyMetaData.put(MetaData.VERSION_DB_STRUCT, List.of(versionDBStructure.trim())));
         metaData.getBlgFilePaths().forEach((user, path) -> stringyMetaData.put(MetaData.BLG_FILE_PATH + "-" + user, List.of(path.toString().trim())));
+        metaData.getAiLibraryId().ifPresent(
+                id -> stringyMetaData.put(MetaData.AI_LIBRARY_ID, List.of(id)));
 
         for (ContentSelector selector : metaData.getContentSelectorsSorted()) {
             stringyMetaData.put(MetaData.SELECTOR_META_PREFIX + selector.getField().getName(), selector.getValues());
@@ -164,6 +179,18 @@ public class MetaDataSerializer {
                                  .stream()
                                  .map(BibField::field)
                                  .toList()) +
+                "]";
+    }
+
+    public static String serializeCustomEntryTypesV2(BibEntryType entryType) {
+        return MetaData.ENTRYTYPE_FLAG_V2 +
+                entryType.getType().getName() +
+                ": req[" +
+                FieldFactory.serializeOrFieldsListV2(entryType.getRequiredFields()) +
+                "] opt[" +
+                FieldFactory.serializeFieldsListV2(entryType.getOptionalFields().stream()
+                                                            .map(BibField::field)
+                                                            .toList()) +
                 "]";
     }
 

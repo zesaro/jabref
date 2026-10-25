@@ -66,7 +66,7 @@ public class FieldValueCell extends ThreeWayMergeCell implements Toggle {
         this.factory = new ActionFactory();
         this.viewModel = new FieldValueCellViewModel(text);
 
-        EasyBind.listen(viewModel.selectedProperty(), (observable, old, isSelected) -> {
+        EasyBind.listen(viewModel.selectedProperty(), (_, _, isSelected) -> {
             pseudoClassStateChanged(SELECTED_PSEUDO_CLASS, isSelected);
             getToggleGroup().selectToggle(FieldValueCell.this);
         });
@@ -82,7 +82,7 @@ public class FieldValueCell extends ThreeWayMergeCell implements Toggle {
         initializeLabel();
         initializeSelectionBox();
         initializeActions();
-        setOnMouseClicked(e -> {
+        setOnMouseClicked(_ -> {
             if (!isDisabled()) {
                 setSelected(true);
             }
@@ -98,7 +98,7 @@ public class FieldValueCell extends ThreeWayMergeCell implements Toggle {
         EasyBind.subscribe(textProperty(), label::replaceText);
         label.setAutoHeight(true);
         label.setWrapText(true);
-        label.setStyle("-fx-cursor: hand");
+        label.setCursor(Cursor.HAND);
 
         // Workarounds
         preventTextSelectionViaMouseEvents();

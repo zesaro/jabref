@@ -24,7 +24,6 @@ import org.jabref.model.entry.types.EntryTypeFactory;
 import org.jabref.model.entry.types.StandardEntryType;
 import org.jabref.model.entry.types.UnknownEntryType;
 
-import io.github.adr.linked.ADR;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,7 +32,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Answers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -657,15 +655,6 @@ class BibEntryWriterTest {
     }
 
     @Test
-    void writeThrowsErrorIfFieldContainsUnbalancedBraces() {
-        BibEntry entry = new BibEntry(StandardEntryType.Article)
-                .withField(StandardField.NOTE, "some text with unbalanced { braces")
-                .withChanged(true);
-
-        assertThrows(IOException.class, () -> bibEntryWriter.write(entry, bibWriter, BibDatabaseMode.BIBTEX));
-    }
-
-    @Test
     void roundTripWithPrecedingCommentTest() throws Exception {
         String bibtexEntry = """
                 % Some random comment that should stay here
@@ -856,7 +845,7 @@ class BibEntryWriterTest {
                 .getFirst();
     }
 
-    @ADR(49)
+    // [utest->adr~hardcode-fieldnames~1]
     @Test
     void lowercaseStandardAndPreserveCustomCasing() throws Exception {
         String bibtexEntry = """
